@@ -6,6 +6,7 @@
 
 #include "platform.h"
 #include <glad/glad.h>
+#include <vector>
 
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
@@ -14,12 +15,52 @@ typedef glm::ivec2 ivec2;
 typedef glm::ivec3 ivec3;
 typedef glm::ivec4 ivec4;
 
+struct OpenGLInfo
+{
+    OpenGLInfo()
+    {
+
+    }
+
+    OpenGLInfo(const char* version, const char* renderer, const char* vendor, unsigned int numExtensions)
+    {
+        this->version = version;
+        this->renderer = renderer;
+        this->vendor = vendor;
+        this->numExtensions = numExtensions;
+    }
+
+    const char* version = nullptr;
+    const char* renderer = nullptr;
+    const char* vendor = nullptr;
+    unsigned int numExtensions = 0;
+    std::vector<const char*> extensions;
+};
+
 struct Image
 {
     void* pixels;
     ivec2 size;
     i32   nchannels;
     i32   stride;
+};
+
+struct Vertex
+{
+    Vertex(float x, float y, float z, float uvx, float uvy)
+    {
+        this->pos = vec3(x, y, z);
+        this->uv = vec2(uvx, uvy);
+    }
+
+    Vertex(vec3 pos, vec2 uv)
+    {
+        this->pos = pos;
+        this->uv =uv;
+    }
+
+    vec3 pos;
+    vec2 uv;
 };
 
 struct Texture
@@ -52,8 +93,7 @@ struct App
     Input input;
 
     // Graphics
-    char gpuName[64];
-    char openGlVersion[64];
+    OpenGLInfo openGLInformation;
 
     ivec2 displaySize;
 
@@ -86,8 +126,6 @@ struct App
 };
 
 void Init(App* app);
-
-void Gui(App* app);
 
 void Update(App* app);
 

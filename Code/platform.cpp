@@ -199,6 +199,11 @@ int main()
 
     GlobalFrameArenaMemory = (u8*)malloc(GLOBAL_FRAME_ARENA_SIZE);
 
+    GLint numExtensions;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+    app.openGLInformation = OpenGLInfo((const char*)glGetString(GL_VERSION), (const char*)glGetString(GL_RENDERER), (const char*)glGetString(GL_VENDOR), numExtensions);
+    for (unsigned int i = 0; i < app.openGLInformation.numExtensions; ++i) app.openGLInformation.extensions.emplace_back((const char*)glGetStringi(GL_EXTENSIONS, GLuint(i)));
+
     Init(&app);
 
     while (app.isRunning)
@@ -210,8 +215,6 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        Gui(&app);
-        ImGui::Render();
 
         // Clear input state if required by ImGui
         if (ImGui::GetIO().WantCaptureKeyboard)
@@ -224,6 +227,8 @@ int main()
 
         // Update
         Update(&app);
+        
+        ImGui::Render();
 
         // Transition input key/button states
         if (!ImGui::GetIO().WantCaptureKeyboard)

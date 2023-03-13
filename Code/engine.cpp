@@ -180,26 +180,70 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
-    // TODO: Initialize your resources here!
-    // - vertex buffers
-    // - element/index buffers
-    // - vaos
-    // - programs (and retrieve uniform indices)
-    // - textures
+    //const Vertex a[4] = {
+    //    
+    //};
 
     app->mode = Mode_TexturedQuad;
 }
 
-void Gui(App* app)
-{
-    ImGui::Begin("Info");
-    ImGui::Text("FPS: %f", 1.0f/app->deltaTime);
-    ImGui::End();
-}
-
 void Update(App* app)
 {
-    // You can handle app->input keyboard/mouse here
+
+    ImGuiDockNodeFlags dockspace_flags = (ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoResize);
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+    ImGui::Begin("##Docking", (bool*)0, (ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus));
+
+    ImGui::PopStyleVar();
+
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.ConfigFlags & (ImGuiConfigFlags_DockingEnable))
+    {
+        ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
+        ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), dockspace_flags);
+    }
+
+    ImGui::End();
+
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("About"))
+        {
+            if (ImGui::BeginMenu("OpenGL"))
+            {
+                ImGui::BulletText("Version   -> %s", app->openGLInformation.version);
+                ImGui::BulletText("Renderer  -> %s", app->openGLInformation.renderer);
+                ImGui::BulletText("Vendor    -> %s", app->openGLInformation.vendor);
+                ImGui::BulletText("Num Extns -> %d", app->openGLInformation.numExtensions);
+                if (ImGui::BeginMenu(" · Extensions"))
+                {
+                    for (std::vector<const char*>::iterator it = app->openGLInformation.extensions.begin(); it != app->openGLInformation.extensions.end(); ++it)
+                        ImGui::Text("%s", (*it));
+                    ImGui::EndMenu();
+                }
+                
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+
+
+    if (!ImGui::Begin("##Info", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus)) return ImGui::End();
+
+    ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
+
+    ImGui::End();
 }
 
 void Render(App* app)
