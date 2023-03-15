@@ -180,17 +180,21 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
-    //const Vertex a[4] = {
-    //    
-    //};
+    const Vertex a[4] = {
+        Vertex(-0.5f, -0.5f, 0.0f, 0.0f, 0.0f),
+        Vertex( 0.5f, -0.5f, 0.0f, 1.0f, 0.0f),
+        Vertex( 0.5f,  0.5f, 0.0f, 1.0f, 1.0f),
+        Vertex(-0.5f,  0.5f, 0.0f, 0.0f, 1.0f)
+    };
 
     app->mode = Mode_TexturedQuad;
 }
 
 void Update(App* app)
 {
+    static bool showFps = false;
 
-    ImGuiDockNodeFlags dockspace_flags = (ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoResize);
+    ImGuiDockNodeFlags dockspace_flags = (ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_PassthruCentralNode);
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
     ImGui::SetNextWindowSize(viewport->Size);
@@ -202,7 +206,7 @@ void Update(App* app)
     ImGui::PopStyleVar();
 
     ImGuiIO& io = ImGui::GetIO();
-    if (io.ConfigFlags & (ImGuiConfigFlags_DockingEnable))
+    if (io.ConfigFlags & (ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable))
     {
         ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
         ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), dockspace_flags);
@@ -214,6 +218,11 @@ void Update(App* app)
     {
         if (ImGui::BeginMenu("File"))
         {
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Config"))
+        {
+            ImGui::Checkbox("Show FPS", &showFps);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("About"))
@@ -238,16 +247,18 @@ void Update(App* app)
         ImGui::EndMainMenuBar();
     }
 
+    if (!ImGui::Begin("##Info", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus)) return ImGui::End();
 
-    if (!ImGui::Begin("##Info", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus)) return ImGui::End();
-
-    ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
+    if (showFps) ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
 
     ImGui::End();
+
+
 }
 
 void Render(App* app)
 {
+    glClear(GL_COLOR_BUFFER_BIT);
     switch (app->mode)
     {
         case Mode_TexturedQuad:

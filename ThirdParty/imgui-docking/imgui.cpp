@@ -13376,15 +13376,16 @@ static void ImGui::DockNodeUpdate(ImGuiDockNode* node)
         host_window->DrawList->AddRectFilled(node->Pos, node->Pos + node->Size, GetColorU32(ImGuiCol_DockingEmptyBg));
 
     // Draw whole dockspace background if ImGuiDockNodeFlags_PassthruCentralNode if set.
-    if (render_dockspace_bg && node->IsVisible)
-    {
-        host_window->DrawList->ChannelsSetCurrent(0);
-        if (central_node_hole)
-            RenderRectFilledWithHole(host_window->DrawList, node->Rect(), central_node->Rect(), GetColorU32(ImGuiCol_WindowBg), 0.0f);
-        else
-            host_window->DrawList->AddRectFilled(node->Pos, node->Pos + node->Size, GetColorU32(ImGuiCol_WindowBg), 0.0f);
-        host_window->DrawList->ChannelsMerge();
-    }
+    // TODO: This is enabling tranparency on docked windows. Just to have it clear!
+    //if (render_dockspace_bg && node->IsVisible)
+    //{
+    //    host_window->DrawList->ChannelsSetCurrent(0);
+    //    if (central_node_hole)
+    //        RenderRectFilledWithHole(host_window->DrawList, node->Rect(), central_node->Rect(), GetColorU32(ImGuiCol_WindowBg), 0.0f);
+    //    else
+    //        host_window->DrawList->AddRectFilled(node->Pos, node->Pos + node->Size, GetColorU32(ImGuiCol_WindowBg), 0.0f);
+    //    host_window->DrawList->ChannelsMerge();
+    //}
 
     // Draw and populate Tab Bar
     if (host_window && node->Windows.Size > 0)
