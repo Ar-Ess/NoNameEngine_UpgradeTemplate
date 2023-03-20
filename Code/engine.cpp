@@ -180,12 +180,69 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
-    const Vertex a[4] = {
+    const Vertex vertex[] = {
         Vertex(-0.5f, -0.5f, 0.0f, 0.0f, 0.0f),
         Vertex( 0.5f, -0.5f, 0.0f, 1.0f, 0.0f),
         Vertex( 0.5f,  0.5f, 0.0f, 1.0f, 1.0f),
         Vertex(-0.5f,  0.5f, 0.0f, 0.0f, 1.0f)
     };
+
+    const u16 index[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+    // Generar buffer i et retorna id
+    glGenBuffers(1, &app->vertexIDs[0]);
+    // Bind del buffer per editarlo
+    glBindBuffer(GL_ARRAY_BUFFER, app->vertexIDs[0]);
+    // Afegir data al buffer sobre els vertex
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex), vertex, GL_STATIC_DRAW);
+    // Desbindejar el buffer per no seguir editant-lo
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Generar buffer i et retorna id
+    glGenBuffers(1, &app->elementsIDs[0]);
+    // Bind del buffer per editarlo
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->elementsIDs[0]);
+    // Afegir data al buffer sobre els index
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index), index, GL_STATIC_DRAW);
+    // Desbindejar el buffer per no seguir editant-lo
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+
+    // Generar vertex array i et retorna id
+    glGenVertexArrays(1, &app->vao);
+    // Bind el vertex array per editarlo
+    glBindVertexArray(app->vao);
+    // Bind el buffer dels vertex per editarlo i colocarlo dins del vao
+    // Quan bindejes a, i després bindejes b, estàs posant b dins a.
+    glBindBuffer(GL_ARRAY_BUFFER, app->vertexIDs[0]);
+    // Dir-li com llegir aquesta data (pos dels vertex).
+    // En aquest cas, 3 floats amb un total d'espai de "Vertex"
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0); // No offset
+    // Activar aquesta manera de llegir (attribut)
+    glEnableVertexAttribArray(0);
+    // Dir-li com llegir aquesta data (uv dels vertex).
+    // En aquest cas, 2 floats amb un total d'espai de "Vertex"
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float))); // Avans té 3 floats (pos)
+    // Activar aquesta manera de llegir (attribut)
+    glEnableVertexAttribArray(1);
+    // Bindejar al vao la array d'elements (indexs)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->elementsIDs[0]); // S s'ha de tancar, que normalment no cal, tancar-lo DESPRÉS de tancar el grup (el vao)
+
+    // Tancar el binding del vao (no cal tancar els de dins, ja es tenquen)
+    glBindVertexArray(0);
+
+    app->texturedGeometryProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
+    Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
+    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
+
+    app->diceTexIdx = LoadTexture2D(app, "dice.png");
+    app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
+    app->blackTexIdx = LoadTexture2D(app, "color_black.png");
+    app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
+    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
 
     app->mode = Mode_TexturedQuad;
 }
@@ -258,24 +315,48 @@ void Update(App* app)
 
 void Render(App* app)
 {
-    glClear(GL_COLOR_BUFFER_BIT);
     switch (app->mode)
     {
-        case Mode_TexturedQuad:
-            {
-                // TODO: Draw your textured quad here!
-                // - clear the framebuffer
-                // - set the viewport
-                // - set the blending state
-                // - bind the texture into unit 0
-                // - bind the program 
-                //   (...and make its texture sample from unit 0)
-                // - bind the vao
-                // - glDrawElements() !!!
-            }
-            break;
+    case Mode_TexturedQuad:
+    {
+        // Asignar el color base
+        glClearColor(0.1f, 0.1f, 0.1, 1.0f);
+        // Borrar el buffer de color i el buffer de profunditat
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        default:;
+        // Defineix el viewport on es renderitza tot
+        glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+        // Get & Set the program to be used
+        glUseProgram(app->programs[app->texturedGeometryProgramIdx].handle);
+        // Bind the vao vertex array
+        glBindVertexArray(app->vao);
+
+        // Enable Blend render mode
+        glEnable(GL_BLEND);
+        // Enable alpha function for blend
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        // Send the texture as uniform variable to glsl script
+        glUniform1i(app->programUniformTexture, 0);
+        // Activate slot for a texture
+        glActiveTexture(GL_TEXTURE0);
+        
+
+        // Bind the texture of the dice
+        glBindTexture(GL_TEXTURE_2D, app->textures[app->diceTexIdx].handle);
+
+        // Draw the elements to the screen
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
+        // Unbind the vertex array
+        glBindVertexArray(0);
+        // Unuse the program used
+        glUseProgram(0);
+
+        break;
+    }
+
+        default: break;
     }
 }
 

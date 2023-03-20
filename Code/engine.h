@@ -115,8 +115,8 @@ struct App
 
     // Embedded geometry (in-editor simple meshes such as
     // a screen filling quad, a cube, a sphere...)
-    GLuint embeddedVertices;
-    GLuint embeddedElements;
+    GLuint vertexIDs[10];
+    GLuint elementsIDs[10];
 
     // Location of the texture uniform in the textured quad shader
     GLuint programUniformTexture;
