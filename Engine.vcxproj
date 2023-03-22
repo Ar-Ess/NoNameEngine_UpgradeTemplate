@@ -33,7 +33,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\engine.h" />
+    <ClInclude Include="Code\Mesh.h" />
     <ClInclude Include="Code\platform.h" />
+    <ClInclude Include="Code\TexturedQuad.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\khrplatform.h" />
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h" />

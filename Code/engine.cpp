@@ -6,6 +6,7 @@
 //
 
 #include "engine.h"
+#include "TexturedQuad.h"
 #include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
@@ -180,10 +181,21 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
+    app->InitTexturedQuad("dice.png", true);
+    app->InitTexturedQuad("color_white.png", false);
+    app->InitTexturedQuad("color_black.png", false);
+    app->InitTexturedQuad("color_normal.png", false);
+    app->InitTexturedQuad("color_magenta.png", false);
+
+    app->InitMesh();
+}
+
+void App::InitTexturedQuad(const char* texture, bool draw)
+{
     const Vertex vertex[] = {
         Vertex(-0.5f, -0.5f, 0.0f, 0.0f, 0.0f),
-        Vertex( 0.5f, -0.5f, 0.0f, 1.0f, 0.0f),
-        Vertex( 0.5f,  0.5f, 0.0f, 1.0f, 1.0f),
+        Vertex(0.5f, -0.5f, 0.0f, 1.0f, 0.0f),
+        Vertex(0.5f,  0.5f, 0.0f, 1.0f, 1.0f),
         Vertex(-0.5f,  0.5f, 0.0f, 0.0f, 1.0f)
     };
 
@@ -192,19 +204,22 @@ void Init(App* app)
         0, 2, 3
     };
 
+    TexturedQuad* quad = new TexturedQuad();
+    quad->draw = draw;
+
     // Generar buffer i et retorna id
-    glGenBuffers(1, &app->vertexIDs[0]);
+    glGenBuffers(1, &quad->vertex);
     // Bind del buffer per editarlo
-    glBindBuffer(GL_ARRAY_BUFFER, app->vertexIDs[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, quad->vertex);
     // Afegir data al buffer sobre els vertex
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertex), vertex, GL_STATIC_DRAW);
     // Desbindejar el buffer per no seguir editant-lo
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // Generar buffer i et retorna id
-    glGenBuffers(1, &app->elementsIDs[0]);
+    glGenBuffers(1, &quad->indexs);
     // Bind del buffer per editarlo
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->elementsIDs[0]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad->indexs);
     // Afegir data al buffer sobre els index
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index), index, GL_STATIC_DRAW);
     // Desbindejar el buffer per no seguir editant-lo
@@ -212,12 +227,12 @@ void Init(App* app)
 
 
     // Generar vertex array i et retorna id
-    glGenVertexArrays(1, &app->vao);
+    glGenVertexArrays(1, &quad->vao);
     // Bind el vertex array per editarlo
-    glBindVertexArray(app->vao);
+    glBindVertexArray(quad->vao);
     // Bind el buffer dels vertex per editarlo i colocarlo dins del vao
     // Quan bindejes a, i després bindejes b, estàs posant b dins a.
-    glBindBuffer(GL_ARRAY_BUFFER, app->vertexIDs[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, quad->vertex);
     // Dir-li com llegir aquesta data (pos dels vertex).
     // En aquest cas, 3 floats amb un total d'espai de "Vertex"
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0); // No offset
@@ -229,27 +244,27 @@ void Init(App* app)
     // Activar aquesta manera de llegir (attribut)
     glEnableVertexAttribArray(1);
     // Bindejar al vao la array d'elements (indexs)
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->elementsIDs[0]); // S s'ha de tancar, que normalment no cal, tancar-lo DESPRÉS de tancar el grup (el vao)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad->indexs); // S s'ha de tancar, que normalment no cal, tancar-lo DESPRÉS de tancar el grup (el vao)
 
     // Tancar el binding del vao (no cal tancar els de dins, ja es tenquen)
     glBindVertexArray(0);
 
-    app->texturedGeometryProgramIdx = LoadProgram(app, "shaders.glsl", "TEXTURED_GEOMETRY");
-    Program& texturedGeometryProgram = app->programs[app->texturedGeometryProgramIdx];
-    app->programUniformTexture = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
+    quad->program = LoadProgram(this, "shaders.glsl", "TEXTURED_GEOMETRY");
+    Program& texturedGeometryProgram = programs[quad->program];
+    quad->uniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 
-    app->diceTexIdx = LoadTexture2D(app, "dice.png");
-    app->whiteTexIdx = LoadTexture2D(app, "color_white.png");
-    app->blackTexIdx = LoadTexture2D(app, "color_black.png");
-    app->normalTexIdx = LoadTexture2D(app, "color_normal.png");
-    app->magentaTexIdx = LoadTexture2D(app, "color_magenta.png");
+    quad->texture = LoadTexture2D(this, texture);
 
-    app->mode = Mode_TexturedQuad;
+    meshes.emplace_back(quad);
+}
+
+void App::InitMesh()
+{
 }
 
 void Update(App* app)
 {
-    static bool showFps = false;
+    static bool showFps = true;
 
     ImGuiDockNodeFlags dockspace_flags = (ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_PassthruCentralNode);
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -304,21 +319,25 @@ void Update(App* app)
         ImGui::EndMainMenuBar();
     }
 
-    if (!ImGui::Begin("##Info", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus)) return ImGui::End();
+    if (ImGui::Begin("##Info", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus))
+    {
+        ImGui::SetWindowSize(ImVec2(app->displaySize.x, app->displaySize.y));
+        if (ImGui::Button("Reload")) app->HotReload();
+        if (showFps) ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
 
-    if (showFps) ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
-
-    ImGui::End();
+        ImGui::End();
+    }
 
 
 }
 
 void Render(App* app)
 {
-    switch (app->mode)
+    for (std::vector<Mesh*>::iterator it = app->meshes.begin(); it != app->meshes.end(); ++it)
     {
-    case Mode_TexturedQuad:
-    {
+        Mesh* m = (*it);
+        if (!m->draw) continue;
+
         // Asignar el color base
         glClearColor(0.1f, 0.1f, 0.1, 1.0f);
         // Borrar el buffer de color i el buffer de profunditat
@@ -326,37 +345,56 @@ void Render(App* app)
 
         // Defineix el viewport on es renderitza tot
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
-        // Get & Set the program to be used
-        glUseProgram(app->programs[app->texturedGeometryProgramIdx].handle);
-        // Bind the vao vertex array
-        glBindVertexArray(app->vao);
 
-        // Enable Blend render mode
-        glEnable(GL_BLEND);
-        // Enable alpha function for blend
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        switch (m->Type())
+        {
+        case MeshType::M_TEXTURED_QUAD:
+        {
+            // Get & Set the program to be used
+            glUseProgram(app->programs[m->program].handle);
+            // Bind the vao vertex array
+            glBindVertexArray(m->vao);
 
-        // Send the texture as uniform variable to glsl script
-        glUniform1i(app->programUniformTexture, 0);
-        // Activate slot for a texture
-        glActiveTexture(GL_TEXTURE0);
-        
+            // Enable Blend render mode
+            glEnable(GL_BLEND);
+            // Enable alpha function for blend
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        // Bind the texture of the dice
-        glBindTexture(GL_TEXTURE_2D, app->textures[app->diceTexIdx].handle);
+            // Send the texture as uniform variable to glsl script
+            glUniform1i(m->uniform, 0);
+            // Activate slot for a texture
+            glActiveTexture(GL_TEXTURE0);
 
-        // Draw the elements to the screen
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
 
-        // Unbind the vertex array
-        glBindVertexArray(0);
-        // Unuse the program used
-        glUseProgram(0);
+            // Bind the texture of the dice
+            glBindTexture(GL_TEXTURE_2D, app->textures[m->texture].handle);
 
-        break;
-    }
+            // Draw the elements to the screen
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
+            // Unbind the vertex array
+            glBindVertexArray(0);
+            // Unuse the program used
+            glUseProgram(0);
+
+            break;
+        }
 
         default: break;
+        }
     }
 }
 
+void App::HotReload()
+{
+    for (std::vector<Program>::iterator it = programs.begin(); it != programs.end(); ++it)
+    {
+        Program& p = (*it);
+        u64 currTimestamp = GetFileLastWriteTimestamp(p.filepath.c_str());
+        if (currTimestamp <= p.lastWriteTimestamp) continue;
+
+        glDeleteProgram(p.handle);
+        p.handle = CreateProgramFromSource(ReadTextFile(p.filepath.c_str()), p.programName.c_str());
+        p.lastWriteTimestamp = currTimestamp;
+    }
+}

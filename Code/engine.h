@@ -5,7 +5,7 @@
 #pragma once
 
 #include "platform.h"
-#include <glad/glad.h>
+#include "Mesh.h"
 #include <vector>
 
 typedef glm::vec2  vec2;
@@ -77,12 +77,6 @@ struct Program
     u64                lastWriteTimestamp; // What is this for?
 };
 
-enum Mode
-{
-    Mode_TexturedQuad,
-    Mode_Count
-};
-
 struct App
 {
     // Loop
@@ -99,30 +93,31 @@ struct App
 
     std::vector<Texture>  textures;
     std::vector<Program>  programs;
+    std::vector<Mesh*> meshes;
+
+    void InitTexturedQuad(const char* texture, bool draw = true);
+    void InitMesh();
+    void HotReload();
 
     // program indices
-    u32 texturedGeometryProgramIdx;
-    
-    // texture indices
-    u32 diceTexIdx;
-    u32 whiteTexIdx;
-    u32 blackTexIdx;
-    u32 normalTexIdx;
-    u32 magentaTexIdx;
-
+    //u32 texturedGeometryProgramIdx;
+    //// texture indices
+    //u32 diceTexIdx;
+    //u32 whiteTexIdx;
+    //u32 blackTexIdx;
+    //u32 normalTexIdx;
+    //u32 magentaTexIdx;
     // Mode
-    Mode mode;
-
+    // Mode mode;
     // Embedded geometry (in-editor simple meshes such as
     // a screen filling quad, a cube, a sphere...)
-    GLuint vertexIDs[10];
-    GLuint elementsIDs[10];
-
+    //GLuint vertexIDs[10];
+    //GLuint elementsIDs[10];
     // Location of the texture uniform in the textured quad shader
-    GLuint programUniformTexture;
-
+    //GLuint programUniformTexture;
     // VAO object to link our screen filling quad with our textured quad shader
-    GLuint vao;
+    // GLuint vao;
+
 };
 
 void Init(App* app);
