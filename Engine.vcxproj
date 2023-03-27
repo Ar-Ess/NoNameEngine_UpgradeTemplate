@@ -32,10 +32,20 @@
     <ClCompile Include="ThirdParty\stb\stb.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Code\AssimpLoading.h" />
     <ClInclude Include="Code\engine.h" />
+    <ClInclude Include="Code\Material.h" />
     <ClInclude Include="Code\Mesh.h" />
+    <ClInclude Include="Code\Model.h" />
+    <ClInclude Include="Code\Object.h" />
     <ClInclude Include="Code\platform.h" />
+    <ClInclude Include="Code\Program.h" />
+    <ClInclude Include="Code\Texture.h" />
     <ClInclude Include="Code\TexturedQuad.h" />
+    <ClInclude Include="Code\Vao.h" />
+    <ClInclude Include="Code\VertexBufferAttibute.h" />
+    <ClInclude Include="Code\VertexBufferLayout.h" />
+    <ClInclude Include="Code\VertexShaderAttribute.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\khrplatform.h" />
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h" />
@@ -49,7 +59,8 @@
     <ClInclude Include="ThirdParty\stb\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="WorkingDir\shaders.glsl" />
+    <None Include="WorkingDir\MeshShader.glsl" />
+    <None Include="WorkingDir\TextureShader.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

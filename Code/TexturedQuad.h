@@ -1,12 +1,12 @@
 #pragma once
-#include "Mesh.h"
+#include "Object.h"
 
-class TexturedQuad : public Mesh
+class TexturedQuad : public Object
 {
 public:
 
-	TexturedQuad() : Mesh(
-		MeshType::M_TEXTURED_QUAD
+	TexturedQuad() : Object(
+		ObjectType::O_TEXTURED_QUAD
 	) {}
 
 private:

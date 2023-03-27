@@ -1,12 +1,6 @@
-//
-// engine.cpp : Put all your graphics stuff in this file. This is kind of the graphics module.
-// In here, you should type all your OpenGL commands, and you can also type code to handle
-// input platform events (e.g to move the camera or react to certain shortcuts), writing some
-// graphics related GUI options, and so on.
-//
-
 #include "engine.h"
 #include "TexturedQuad.h"
+#include "Model.h"
 #include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
@@ -99,7 +93,7 @@ u32 LoadProgram(App* app, const char* filepath, const char* programName)
     program.filepath = filepath;
     program.programName = programName;
     program.lastWriteTimestamp = GetFileLastWriteTimestamp(filepath);
-    app->programs.push_back(program);
+    app->programs.push_back(new Program(program));
 
     return app->programs.size() - 1;
 }
@@ -142,8 +136,8 @@ GLuint CreateTexture2DFromImage(Image image)
     glGenTextures(1, &texHandle);
     glBindTexture(GL_TEXTURE_2D, texHandle);
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, image.size.x, image.size.y, 0, dataFormat, dataType, image.pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -156,7 +150,7 @@ GLuint CreateTexture2DFromImage(Image image)
 u32 LoadTexture2D(App* app, const char* filepath)
 {
     for (u32 texIdx = 0; texIdx < app->textures.size(); ++texIdx)
-        if (app->textures[texIdx].filepath == filepath)
+        if (app->textures[texIdx]->filepath == filepath)
             return texIdx;
 
     Image image = LoadImage(filepath);
@@ -168,7 +162,7 @@ u32 LoadTexture2D(App* app, const char* filepath)
         tex.filepath = filepath;
 
         u32 texIdx = app->textures.size();
-        app->textures.push_back(tex);
+        app->textures.push_back(new Texture(tex));
 
         FreeImage(image);
         return texIdx;
@@ -181,7 +175,10 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
-    app->InitTexturedQuad("dice.png", true);
+    if (GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 3))
+        glDebugMessageCallback(OnGlError, app);
+
+    app->InitTexturedQuad("dice.png", false);
     app->InitTexturedQuad("color_white.png", false);
     app->InitTexturedQuad("color_black.png", false);
     app->InitTexturedQuad("color_normal.png", false);
@@ -227,9 +224,9 @@ void App::InitTexturedQuad(const char* texture, bool draw)
 
 
     // Generar vertex array i et retorna id
-    glGenVertexArrays(1, &quad->vao);
+    glGenVertexArrays(1, &quad->vao.handle);
     // Bind el vertex array per editarlo
-    glBindVertexArray(quad->vao);
+    glBindVertexArray(quad->vao.handle);
     // Bind el buffer dels vertex per editarlo i colocarlo dins del vao
     // Quan bindejes a, i després bindejes b, estàs posant b dins a.
     glBindBuffer(GL_ARRAY_BUFFER, quad->vertex);
@@ -249,8 +246,8 @@ void App::InitTexturedQuad(const char* texture, bool draw)
     // Tancar el binding del vao (no cal tancar els de dins, ja es tenquen)
     glBindVertexArray(0);
 
-    quad->program = LoadProgram(this, "shaders.glsl", "TEXTURED_GEOMETRY");
-    Program& texturedGeometryProgram = programs[quad->program];
+    quad->vao.program = LoadProgram(this, "TextureShader.glsl", "TEXTURED_GEOMETRY");
+    Program& texturedGeometryProgram = *programs[quad->vao.program];
     quad->uniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 
     quad->texture = LoadTexture2D(this, texture);
@@ -260,6 +257,9 @@ void App::InitTexturedQuad(const char* texture, bool draw)
 
 void App::InitMesh()
 {
+    Model* m = new Model();
+    VertexBufferLayout layout;
+    layout.attributes.push_back(new VertexBufferAttribute(0, 3, 0));
 }
 
 void Update(App* app)
@@ -333,10 +333,10 @@ void Update(App* app)
 
 void Render(App* app)
 {
-    for (std::vector<Mesh*>::iterator it = app->meshes.begin(); it != app->meshes.end(); ++it)
+    for (std::vector<Object*>::iterator it = app->meshes.begin(); it != app->meshes.end(); ++it)
     {
-        Mesh* m = (*it);
-        if (!m->draw) continue;
+        Object* o = (*it);
+        if (!o->draw) continue;
 
         // Asignar el color base
         glClearColor(0.1f, 0.1f, 0.1, 1.0f);
@@ -346,14 +346,14 @@ void Render(App* app)
         // Defineix el viewport on es renderitza tot
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
-        switch (m->Type())
+        switch (o->Type())
         {
-        case MeshType::M_TEXTURED_QUAD:
+        case ObjectType::O_TEXTURED_QUAD:
         {
             // Get & Set the program to be used
-            glUseProgram(app->programs[m->program].handle);
+            glUseProgram(app->programs[o->vao.program]->handle);
             // Bind the vao vertex array
-            glBindVertexArray(m->vao);
+            glBindVertexArray(o->vao.handle);
 
             // Enable Blend render mode
             glEnable(GL_BLEND);
@@ -361,13 +361,13 @@ void Render(App* app)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
             // Send the texture as uniform variable to glsl script
-            glUniform1i(m->uniform, 0);
+            glUniform1i(o->uniform, 0);
             // Activate slot for a texture
             glActiveTexture(GL_TEXTURE0);
 
 
             // Bind the texture of the dice
-            glBindTexture(GL_TEXTURE_2D, app->textures[m->texture].handle);
+            glBindTexture(GL_TEXTURE_2D, app->textures[o->texture]->handle);
 
             // Draw the elements to the screen
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
@@ -387,9 +387,9 @@ void Render(App* app)
 
 void App::HotReload()
 {
-    for (std::vector<Program>::iterator it = programs.begin(); it != programs.end(); ++it)
+    for (std::vector<Program*>::iterator it = programs.begin(); it != programs.end(); ++it)
     {
-        Program& p = (*it);
+        Program& p = *(*it);
         u64 currTimestamp = GetFileLastWriteTimestamp(p.filepath.c_str());
         if (currTimestamp <= p.lastWriteTimestamp) continue;
 
@@ -397,4 +397,46 @@ void App::HotReload()
         p.handle = CreateProgramFromSource(ReadTextFile(p.filepath.c_str()), p.programName.c_str());
         p.lastWriteTimestamp = currTimestamp;
     }
+}
+
+void OnGlError(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+    if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
+
+    ELOG("OpenGL debug message: %s", message);
+
+    switch (source)
+    {
+    case GL_DEBUG_SOURCE_API:             ELOG(" - source: GL_DEBUG_SOURCE_API"); break;
+    case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   ELOG(" - source: GL_DEBUG_SOURCE_WINDOW_SYSTEM"); break;
+    case GL_DEBUG_SOURCE_SHADER_COMPILER: ELOG(" - source: GL_DEBUG_SOURCE_SHADER_COMPILER"); break;
+    case GL_DEBUG_SOURCE_THIRD_PARTY:     ELOG(" - source: GL_DEBUG_SOURCE_THIRD_PARTY    "); break;
+    case GL_DEBUG_SOURCE_APPLICATION:     ELOG(" - source: GL_DEBUG_SOURCE_APPLICATION"); break;
+    case GL_DEBUG_SOURCE_OTHER:           ELOG(" - source: GL_DEBUG_SOURCE_OTHER"); break;
+    default: break;
+    }
+
+    switch (type)
+    {
+    case GL_DEBUG_TYPE_ERROR:               ELOG(" - type: GL_TYPE_ERROR"); break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: ELOG(" - type: GL_TYPE_DEPRECATED_BEHAVIOR"); break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  ELOG(" - type: GL_TYPE_UNDEFINED_BEHAVIOR"); break;
+    case GL_DEBUG_TYPE_PORTABILITY:         ELOG(" - type: GL_TYPE_PORTABILITY"); break;
+    case GL_DEBUG_TYPE_PERFORMANCE:         ELOG(" - type: GL_TYPE_PERFORMANCE"); break;
+    case GL_DEBUG_TYPE_MARKER:              ELOG(" - type: GL_TYPE_MARKER"); break;
+    case GL_DEBUG_TYPE_PUSH_GROUP:          ELOG(" - type: GL_TYPE_PUSH_GROUP"); break;
+    case GL_DEBUG_TYPE_POP_GROUP:           ELOG(" - type: GL_TYPE_POP_GROUP"); break;
+    case GL_DEBUG_TYPE_OTHER:               ELOG(" - type: GL_TYPE_OTHER"); break;
+    default: break;
+    }
+
+    switch (severity)
+    {
+    case GL_DEBUG_SEVERITY_HIGH:   ELOG(" - severity: GL_DEBUG_SEVERITY_HIGH:"); break;
+    case GL_DEBUG_SEVERITY_MEDIUM: ELOG(" - severity: GL_DEBUG_SEVERITY_MEDIUM"); break;
+    case GL_DEBUG_SEVERITY_LOW:    ELOG(" - severity: GL_DEBUG_SEVERITY_LOW:"); break;
+    default: break;
+    }
+
+    ELOG("______________________________________________");
 }

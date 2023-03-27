@@ -5,8 +5,10 @@
 #pragma once
 
 #include "platform.h"
-#include "Mesh.h"
-#include <vector>
+#include "Object.h"
+#include "Material.h"
+#include "Texture.h"
+#include "Program.h"
 
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
@@ -63,20 +65,6 @@ struct Vertex
     vec2 uv;
 };
 
-struct Texture
-{
-    GLuint      handle;
-    std::string filepath;
-};
-
-struct Program
-{
-    GLuint             handle;
-    std::string        filepath;
-    std::string        programName;
-    u64                lastWriteTimestamp; // What is this for?
-};
-
 struct App
 {
     // Loop
@@ -91,9 +79,10 @@ struct App
 
     ivec2 displaySize;
 
-    std::vector<Texture>  textures;
-    std::vector<Program>  programs;
-    std::vector<Mesh*> meshes;
+    std::vector<Texture*> textures;
+    std::vector<Program*> programs;
+    std::vector<Object*> meshes;
+    std::vector<Material*> materials;
 
     void InitTexturedQuad(const char* texture, bool draw = true);
     void InitMesh();
@@ -126,3 +115,4 @@ void Update(App* app);
 
 void Render(App* app);
 
+void OnGlError(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
