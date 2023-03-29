@@ -15,11 +15,9 @@ public:
 		ObjectType::O_MODEL
 	) {}
 
-private:
-
 	std::vector<Mesh*> meshes;
 	std::vector<unsigned int> materials;
 	GLuint vertexBufferHandle;
-	GLuint indexsBufferHandle;
+	GLuint indexBufferHandle;
 
 };

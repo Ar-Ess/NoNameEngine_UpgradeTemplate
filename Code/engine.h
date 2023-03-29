@@ -68,7 +68,7 @@ struct Vertex
 struct App
 {
     // Loop
-    f32  deltaTime;
+    float deltaTime;
     bool isRunning;
 
     // Input
@@ -81,31 +81,12 @@ struct App
 
     std::vector<Texture*> textures;
     std::vector<Program*> programs;
-    std::vector<Object*> meshes;
+    std::vector<Object*> objects;
     std::vector<Material*> materials;
 
     void InitTexturedQuad(const char* texture, bool draw = true);
     void InitMesh();
     void HotReload();
-
-    // program indices
-    //u32 texturedGeometryProgramIdx;
-    //// texture indices
-    //u32 diceTexIdx;
-    //u32 whiteTexIdx;
-    //u32 blackTexIdx;
-    //u32 normalTexIdx;
-    //u32 magentaTexIdx;
-    // Mode
-    // Mode mode;
-    // Embedded geometry (in-editor simple meshes such as
-    // a screen filling quad, a cube, a sphere...)
-    //GLuint vertexIDs[10];
-    //GLuint elementsIDs[10];
-    // Location of the texture uniform in the textured quad shader
-    //GLuint programUniformTexture;
-    // VAO object to link our screen filling quad with our textured quad shader
-    // GLuint vao;
 
 };
 
@@ -114,5 +95,7 @@ void Init(App* app);
 void Update(App* app);
 
 void Render(App* app);
+
+u32 LoadTexture2D(App* app, const char* filepath);
 
 void OnGlError(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);

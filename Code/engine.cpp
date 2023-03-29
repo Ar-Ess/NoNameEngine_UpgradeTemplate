@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
+#include "AssimpLoading.h"
 
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 {
@@ -257,9 +258,7 @@ void App::InitTexturedQuad(const char* texture, bool draw)
 
 void App::InitMesh()
 {
-    Model* m = new Model();
-    VertexBufferLayout layout;
-    layout.attributes.push_back(new VertexBufferAttribute(0, 3, 0));
+    LoadModel();
 }
 
 void Update(App* app)
@@ -323,7 +322,7 @@ void Update(App* app)
     {
         ImGui::SetWindowSize(ImVec2(app->displaySize.x, app->displaySize.y));
         if (ImGui::Button("Reload")) app->HotReload();
-        if (showFps) ImGui::Text("FPS: %f", 1.0f / app->deltaTime);
+        if (showFps) ImGui::Text("FPS: %f", float(1.0f / app->deltaTime));
 
         ImGui::End();
     }
