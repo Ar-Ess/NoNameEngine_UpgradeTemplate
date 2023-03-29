@@ -10,12 +10,7 @@
 #include "Texture.h"
 #include "Program.h"
 
-typedef glm::vec2  vec2;
-typedef glm::vec3  vec3;
-typedef glm::vec4  vec4;
-typedef glm::ivec2 ivec2;
-typedef glm::ivec3 ivec3;
-typedef glm::ivec4 ivec4;
+#include "Typedef.h"
 
 struct OpenGLInfo
 {
@@ -85,7 +80,7 @@ struct App
     std::vector<Material*> materials;
 
     void InitTexturedQuad(const char* texture, bool draw = true);
-    void InitMesh();
+    void InitMesh(const char* path, bool draw = true);
     void HotReload();
 
 };

@@ -94,7 +94,7 @@ u32 LoadProgram(App* app, const char* filepath, const char* programName)
     program.filepath = filepath;
     program.programName = programName;
     program.lastWriteTimestamp = GetFileLastWriteTimestamp(filepath);
-    app->programs.push_back(new Program(program));
+    app->programs.emplace_back(new Program(program));
 
     return app->programs.size() - 1;
 }
@@ -163,7 +163,7 @@ u32 LoadTexture2D(App* app, const char* filepath)
         tex.filepath = filepath;
 
         u32 texIdx = app->textures.size();
-        app->textures.push_back(new Texture(tex));
+        app->textures.emplace_back(new Texture(tex));
 
         FreeImage(image);
         return texIdx;
@@ -179,13 +179,13 @@ void Init(App* app)
     if (GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 3))
         glDebugMessageCallback(OnGlError, app);
 
-    app->InitTexturedQuad("dice.png", false);
+    app->InitTexturedQuad("dice.png", true);
     app->InitTexturedQuad("color_white.png", false);
     app->InitTexturedQuad("color_black.png", false);
     app->InitTexturedQuad("color_normal.png", false);
     app->InitTexturedQuad("color_magenta.png", false);
 
-    app->InitMesh();
+    app->InitMesh("Patrick/Patrick.obj", true);
 }
 
 void App::InitTexturedQuad(const char* texture, bool draw)
@@ -206,9 +206,9 @@ void App::InitTexturedQuad(const char* texture, bool draw)
     quad->draw = draw;
 
     // Generar buffer i et retorna id
-    glGenBuffers(1, &quad->vertex);
+    glGenBuffers(1, &quad->vertexs);
     // Bind del buffer per editarlo
-    glBindBuffer(GL_ARRAY_BUFFER, quad->vertex);
+    glBindBuffer(GL_ARRAY_BUFFER, quad->vertexs);
     // Afegir data al buffer sobre els vertex
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertex), vertex, GL_STATIC_DRAW);
     // Desbindejar el buffer per no seguir editant-lo
@@ -230,7 +230,7 @@ void App::InitTexturedQuad(const char* texture, bool draw)
     glBindVertexArray(quad->vao.handle);
     // Bind el buffer dels vertex per editarlo i colocarlo dins del vao
     // Quan bindejes a, i després bindejes b, estàs posant b dins a.
-    glBindBuffer(GL_ARRAY_BUFFER, quad->vertex);
+    glBindBuffer(GL_ARRAY_BUFFER, quad->vertexs);
     // Dir-li com llegir aquesta data (pos dels vertex).
     // En aquest cas, 3 floats amb un total d'espai de "Vertex"
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0); // No offset
@@ -247,18 +247,41 @@ void App::InitTexturedQuad(const char* texture, bool draw)
     // Tancar el binding del vao (no cal tancar els de dins, ja es tenquen)
     glBindVertexArray(0);
 
-    quad->vao.program = LoadProgram(this, "TextureShader.glsl", "TEXTURED_GEOMETRY");
+    quad->program = quad->vao.program = LoadProgram(this, "TextureShader.glsl", "TEXTURED_GEOMETRY");
+    
     Program& texturedGeometryProgram = *programs[quad->vao.program];
-    quad->uniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
+    quad->texUniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 
     quad->texture = LoadTexture2D(this, texture);
 
-    meshes.emplace_back(quad);
+    objects.emplace_back(quad);
 }
 
-void App::InitMesh()
+void App::InitMesh(const char* path, bool draw)
 {
-    LoadModel();
+    Model* m = LoadModel(this, path);
+    m->program = LoadProgram(this, "MeshShader.glsl", "TEXTURED_GEOMETRY");
+    m->draw = draw;
+
+    Program* p = programs[m->program];
+    m->texUniform = glGetUniformLocation(p->handle, "uTexture");
+
+    GLsizei size = 0;
+    glGetProgramiv(p->handle, GL_ACTIVE_ATTRIBUTES, &size);
+    for (unsigned int i = 0; i < size; ++i)
+    {
+        char attribName[200] = {};
+        GLsizei attribLength = 0;
+        GLint attribSize = 0;
+        GLenum attribType = 0;
+        glGetActiveAttrib(p->handle, i, ARRAY_COUNT(attribName), &attribLength, &attribSize, &attribType, attribName);
+
+        p->attributes.emplace_back(new VertexShaderAttribute(glGetAttribLocation(p->handle, attribName), attribSize));
+    }
+
+    for (std::vector<Mesh*>::iterator it = m->meshes.begin(); it != m->meshes.end(); ++it)
+        for (std::vector<Vao>::iterator ot = (*it)->vaos.begin(); ot != (*it)->vaos.end(); ++ot)
+            (*ot).program = m->program;
 }
 
 void Update(App* app)
@@ -332,27 +355,28 @@ void Update(App* app)
 
 void Render(App* app)
 {
-    for (std::vector<Object*>::iterator it = app->meshes.begin(); it != app->meshes.end(); ++it)
+    // Asignar el color base
+    glClearColor(0.1f, 0.1f, 0.1, 1.0f);
+    // Borrar el buffer de color i el buffer de profunditat
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Defineix el viewport on es renderitza tot
+    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
+    for (std::vector<Object*>::iterator it = app->objects.begin(); it != app->objects.end(); ++it)
     {
         Object* o = (*it);
         if (!o->draw) continue;
-
-        // Asignar el color base
-        glClearColor(0.1f, 0.1f, 0.1, 1.0f);
-        // Borrar el buffer de color i el buffer de profunditat
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Defineix el viewport on es renderitza tot
-        glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
         switch (o->Type())
         {
         case ObjectType::O_TEXTURED_QUAD:
         {
+            TexturedQuad* tQ = (TexturedQuad*)o;
             // Get & Set the program to be used
-            glUseProgram(app->programs[o->vao.program]->handle);
+            glUseProgram(app->programs[tQ->vao.program]->handle);
             // Bind the vao vertex array
-            glBindVertexArray(o->vao.handle);
+            glBindVertexArray(tQ->vao.handle);
 
             // Enable Blend render mode
             glEnable(GL_BLEND);
@@ -360,13 +384,13 @@ void Render(App* app)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
             // Send the texture as uniform variable to glsl script
-            glUniform1i(o->uniform, 0);
+            glUniform1i(o->texUniform, 0);
             // Activate slot for a texture
             glActiveTexture(GL_TEXTURE0);
 
 
             // Bind the texture of the dice
-            glBindTexture(GL_TEXTURE_2D, app->textures[o->texture]->handle);
+            glBindTexture(GL_TEXTURE_2D, app->textures[tQ->texture]->handle);
 
             // Draw the elements to the screen
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
@@ -375,6 +399,30 @@ void Render(App* app)
             glBindVertexArray(0);
             // Unuse the program used
             glUseProgram(0);
+
+            break;
+        }
+
+        case ObjectType::O_MODEL:
+        {
+            Model* m = (Model*)o;
+            glUseProgram(app->programs[m->program]->handle);
+
+            unsigned int size = m->meshes.size();
+            for (u32 i = 0; i < size; ++i)
+            {
+                GLuint vao = m->FindVAO(i, app->programs[m->program]);
+                glBindVertexArray(vao);
+
+                Material* mat = app->materials[m->materials[i]];
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, app->textures[mat->albedoTex]->handle);
+                glUniform1i(m->texUniform, 0);
+
+                Mesh* mesh = m->meshes[i];
+                glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
+            }
 
             break;
         }

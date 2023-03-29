@@ -9,6 +9,9 @@ public:
 		ObjectType::O_TEXTURED_QUAD
 	) {}
 
-private:
+public:
+
+	Vao vao;
+	GLuint texture;
 
 };

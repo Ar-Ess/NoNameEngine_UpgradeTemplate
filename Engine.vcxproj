@@ -42,6 +42,7 @@
     <ClInclude Include="Code\Program.h" />
     <ClInclude Include="Code\Texture.h" />
     <ClInclude Include="Code\TexturedQuad.h" />
+    <ClInclude Include="Code\Typedef.h" />
     <ClInclude Include="Code\Vao.h" />
     <ClInclude Include="Code\VertexBufferAttibute.h" />
     <ClInclude Include="Code\VertexBufferLayout.h" />

@@ -16,26 +16,26 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, unsig
     // process vertices
     for (unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
-        vertices.push_back(mesh->mVertices[i].x);
-        vertices.push_back(mesh->mVertices[i].y);
-        vertices.push_back(mesh->mVertices[i].z);
-        vertices.push_back(mesh->mNormals[i].x);
-        vertices.push_back(mesh->mNormals[i].y);
-        vertices.push_back(mesh->mNormals[i].z);
+        vertices.emplace_back(mesh->mVertices[i].x);
+        vertices.emplace_back(mesh->mVertices[i].y);
+        vertices.emplace_back(mesh->mVertices[i].z);
+        vertices.emplace_back(mesh->mNormals[i].x);
+        vertices.emplace_back(mesh->mNormals[i].y);
+        vertices.emplace_back(mesh->mNormals[i].z);
 
         if (mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
         {
             hasTexCoords = true;
-            vertices.push_back(mesh->mTextureCoords[0][i].x);
-            vertices.push_back(mesh->mTextureCoords[0][i].y);
+            vertices.emplace_back(mesh->mTextureCoords[0][i].x);
+            vertices.emplace_back(mesh->mTextureCoords[0][i].y);
         }
 
         if (mesh->mTangents != nullptr && mesh->mBitangents)
         {
             hasTangentSpace = true;
-            vertices.push_back(mesh->mTangents[i].x);
-            vertices.push_back(mesh->mTangents[i].y);
-            vertices.push_back(mesh->mTangents[i].z);
+            vertices.emplace_back(mesh->mTangents[i].x);
+            vertices.emplace_back(mesh->mTangents[i].y);
+            vertices.emplace_back(mesh->mTangents[i].z);
 
             // For some reason ASSIMP gives me the bitangents flipped.
             // Maybe it's my fault, but when I generate my own geometry
@@ -45,9 +45,9 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, unsig
             // I think that (even if the documentation says the opposite)
             // it returns a left-handed tangent space matrix.
             // SOLUTION: I invert the components of the bitangent here.
-            vertices.push_back(-mesh->mBitangents[i].x);
-            vertices.push_back(-mesh->mBitangents[i].y);
-            vertices.push_back(-mesh->mBitangents[i].z);
+            vertices.emplace_back(-mesh->mBitangents[i].x);
+            vertices.emplace_back(-mesh->mBitangents[i].y);
+            vertices.emplace_back(-mesh->mBitangents[i].z);
         }
     }
 
@@ -57,29 +57,29 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, unsig
         aiFace face = mesh->mFaces[i];
         for (unsigned int j = 0; j < face.mNumIndices; j++)
         {
-            indices.push_back(face.mIndices[j]);
+            indices.emplace_back(face.mIndices[j]);
         }
     }
 
     // store the proper (previously proceessed) material for this mesh
-    submeshMaterialIndices.push_back(baseMeshMaterialIndex + mesh->mMaterialIndex);
+    submeshMaterialIndices.emplace_back(baseMeshMaterialIndex + mesh->mMaterialIndex);
 
     // create the vertex format
     VertexBufferLayout vertexBufferLayout = {};
-    vertexBufferLayout.attributes.push_back(new VertexBufferAttribute( 0, 3, 0 ));
-    vertexBufferLayout.attributes.push_back(new VertexBufferAttribute( 1, 3, 3 * sizeof(float) ));
+    vertexBufferLayout.attributes.emplace_back(new VertexBufferAttribute( 0, 3, 0 ));
+    vertexBufferLayout.attributes.emplace_back(new VertexBufferAttribute( 1, 3, 3 * sizeof(float) ));
     vertexBufferLayout.stride = 6 * sizeof(float);
     if (hasTexCoords)
     {
-        vertexBufferLayout.attributes.push_back(new VertexBufferAttribute( 2, 2, vertexBufferLayout.stride ));
+        vertexBufferLayout.attributes.emplace_back(new VertexBufferAttribute( 2, 2, vertexBufferLayout.stride ));
         vertexBufferLayout.stride += 2 * sizeof(float);
     }
     if (hasTangentSpace)
     {
-        vertexBufferLayout.attributes.push_back(new VertexBufferAttribute( 3, 3, vertexBufferLayout.stride ));
+        vertexBufferLayout.attributes.emplace_back(new VertexBufferAttribute( 3, 3, vertexBufferLayout.stride ));
         vertexBufferLayout.stride += 3 * sizeof(float);
 
-        vertexBufferLayout.attributes.push_back(new VertexBufferAttribute( 4, 3, vertexBufferLayout.stride ));
+        vertexBufferLayout.attributes.emplace_back(new VertexBufferAttribute( 4, 3, vertexBufferLayout.stride ));
         vertexBufferLayout.stride += 3 * sizeof(float);
     }
 
@@ -88,7 +88,7 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, unsig
     m->vertexBufferLayout = vertexBufferLayout;
     m->vertexs.swap(vertices);
     m->indexs.swap(indices);
-    myModel->meshes.push_back(m);
+    myModel->meshes.emplace_back(m);
 }
 
 void ProcessAssimpMaterial(App* app, aiMaterial* material, Material* myMaterial, String directory)
@@ -165,7 +165,7 @@ void ProcessAssimpNode(const aiScene* scene, aiNode* node, Model* myModel, u32 b
     }
 }
 
-u32 LoadModel(App* app, const char* filename)
+Model* LoadModel(App* app, const char* filename)
 {
     const aiScene* scene = aiImportFile(filename,
         aiProcess_Triangulate |
@@ -180,7 +180,7 @@ u32 LoadModel(App* app, const char* filename)
     if (!scene)
     {
         ELOG("Error loading mesh %s: %s", filename, aiGetErrorString());
-        return UINT32_MAX;
+        return nullptr;
     }
 
     //app->meshes.push_back(Mesh{});
@@ -198,7 +198,7 @@ u32 LoadModel(App* app, const char* filename)
     for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
     {
         Material* mat = new Material();
-        app->materials.push_back(mat);
+        app->materials.emplace_back(mat);
         ProcessAssimpMaterial(app, scene->mMaterials[i], mat, directory);
     }
 
@@ -216,12 +216,12 @@ u32 LoadModel(App* app, const char* filename)
         indexBufferSize += m->meshes[i]->indexs.size() * sizeof(u32);
     }
 
-    glGenBuffers(1, &m->vertexBufferHandle);
-    glBindBuffer(GL_ARRAY_BUFFER, m->vertexBufferHandle);
+    glGenBuffers(1, &m->vertexs);
+    glBindBuffer(GL_ARRAY_BUFFER, m->vertexs);
     glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, NULL, GL_STATIC_DRAW);
 
-    glGenBuffers(1, &m->indexBufferHandle);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indexBufferHandle);
+    glGenBuffers(1, &m->indexs);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indexs);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, NULL, GL_STATIC_DRAW);
 
     u32 indicesOffset = 0;
@@ -246,5 +246,5 @@ u32 LoadModel(App* app, const char* filename)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    return modelIdx;
+    return m;
 }

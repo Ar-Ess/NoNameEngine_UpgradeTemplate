@@ -24,12 +24,10 @@ public:
 
 public:
 
-	GLuint vertex;
+	GLuint vertexs;
 	GLuint indexs;
-
-	Vao vao;
-	GLuint uniform;
-	GLuint texture;
+	GLuint texUniform;
+	GLuint program;
 	bool draw = true;
 
 protected:
