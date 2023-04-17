@@ -6,6 +6,8 @@
 #include <stb_image_write.h>
 #include "AssimpLoading.h"
 
+#define BINDING(b) b
+
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 {
     GLchar  infoLogBuffer[1024] = {};
@@ -176,15 +178,22 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
+    app->worldMatrix = glm::mat4(1);
+    app->worldViewProjectionMatrix = glm::mat4(1);
+
     if (GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 3))
         glDebugMessageCallback(OnGlError, app);
+
+    glGenBuffers(1, &app->uniformBufferHandle);
+    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBufferHandle);
+    glBufferData(GL_UNIFORM_BUFFER, app->GetMaxUniformBlockSize(), NULL, GL_STREAM_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     //app->InitTexturedQuad("dice.png", false);
     //app->InitTexturedQuad("color_white.png", false);
     //app->InitTexturedQuad("color_black.png", false);
     //app->InitTexturedQuad("color_normal.png", false);
     //app->InitTexturedQuad("color_magenta.png", false);
-
     app->InitMesh("Patrick/Patrick.obj", true);
 }
 
@@ -366,6 +375,27 @@ void Render(App* app)
 
     // Defineix el viewport on es renderitza tot
     glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
+    // Fill Uniform Buffer once per update
+    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBufferHandle);
+
+    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+    u32 bufferHead = 0;
+
+    memcpy(bufferData + bufferHead, glm::value_ptr(app->worldMatrix), sizeof(glm::mat4));
+    bufferHead += sizeof(glm::mat4);
+
+    memcpy(bufferData + bufferHead, glm::value_ptr(app->worldViewProjectionMatrix), sizeof(glm::mat4));
+    bufferHead += sizeof(glm::mat4);
+
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    u32 blockOffset = 0;
+    u32 blockSize = sizeof(glm::mat4) * 2;
+    glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBufferHandle, blockOffset, blockSize);
+
+    ///////////////////
 
     for (std::vector<Object*>::iterator it = app->objects.begin(); it != app->objects.end(); ++it)
     {

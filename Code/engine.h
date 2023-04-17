@@ -83,6 +83,22 @@ struct App
     void InitMesh(const char* path, bool draw = true);
     void HotReload();
 
+    GLint GetMaxUniformBlockSize() const
+    {
+        GLint a = 0;
+        glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &a);
+        return a;
+    }
+    GLint GetUniformBlockAlignment() const
+    {
+        GLint a = 0;
+        glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &a);
+        return a;
+    }
+
+    GLuint uniformBufferHandle;
+    glm::mat4 worldMatrix;
+    glm::mat4 worldViewProjectionMatrix;
 };
 
 void Init(App* app);
