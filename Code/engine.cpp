@@ -179,11 +179,11 @@ void Init(App* app)
     if (GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 3))
         glDebugMessageCallback(OnGlError, app);
 
-    app->InitTexturedQuad("dice.png", true);
-    app->InitTexturedQuad("color_white.png", false);
-    app->InitTexturedQuad("color_black.png", false);
-    app->InitTexturedQuad("color_normal.png", false);
-    app->InitTexturedQuad("color_magenta.png", false);
+    //app->InitTexturedQuad("dice.png", false);
+    //app->InitTexturedQuad("color_white.png", false);
+    //app->InitTexturedQuad("color_black.png", false);
+    //app->InitTexturedQuad("color_normal.png", false);
+    //app->InitTexturedQuad("color_magenta.png", false);
 
     app->InitMesh("Patrick/Patrick.obj", true);
 }
@@ -259,12 +259,10 @@ void App::InitTexturedQuad(const char* texture, bool draw)
 
 void App::InitMesh(const char* path, bool draw)
 {
-    Model* m = LoadModel(this, path);
-    m->program = LoadProgram(this, "MeshShader.glsl", "TEXTURED_GEOMETRY");
-    m->draw = draw;
+    u32 program = LoadProgram(this, "MeshShader.glsl", "TEXTURED_GEOMETRY");
 
-    Program* p = programs[m->program];
-    m->texUniform = glGetUniformLocation(p->handle, "uTexture");
+    Program* p = programs[program];
+    GLuint texUniform = glGetUniformLocation(p->handle, "uTexture");
 
     GLsizei size = 0;
     glGetProgramiv(p->handle, GL_ACTIVE_ATTRIBUTES, &size);
@@ -279,9 +277,15 @@ void App::InitMesh(const char* path, bool draw)
         p->attributes.emplace_back(new VertexShaderAttribute(glGetAttribLocation(p->handle, attribName), attribSize));
     }
 
+    Model* m = LoadModel(this, path);
+    m->program = program;
+    m->draw = draw;
+    m->texUniform = texUniform;
+
     for (std::vector<Mesh*>::iterator it = m->meshes.begin(); it != m->meshes.end(); ++it)
         for (std::vector<Vao>::iterator ot = (*it)->vaos.begin(); ot != (*it)->vaos.end(); ++ot)
             (*ot).program = m->program;
+
 }
 
 void Update(App* app)
@@ -422,7 +426,11 @@ void Render(App* app)
 
                 Mesh* mesh = m->meshes[i];
                 glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
+
+                glBindVertexArray(0);
             }
+
+            glUseProgram(0);
 
             break;
         }

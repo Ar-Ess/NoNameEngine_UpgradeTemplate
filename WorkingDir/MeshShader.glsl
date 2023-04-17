@@ -18,7 +18,7 @@ void main()
 	float clippingScale = 5.0;
 	gl_Position = vec4(aPosition, clippingScale);
 
-	fl_Position.z = -gl_Position.z;
+	gl_Position.z = -gl_Position.z;
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
@@ -36,5 +36,5 @@ void main()
 	fragColor = texture(uTexture, vTexCoord);
 }
 
-#endif
+#endif ///////////////////////////////////////////////
 #endif

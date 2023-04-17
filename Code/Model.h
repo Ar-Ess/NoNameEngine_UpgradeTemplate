@@ -20,9 +20,8 @@ public:
 		unsigned int size = mesh->vaos.size();
 		for (unsigned int i = 0; i < size; ++i)
 		{
-			unsigned int handle = mesh->vaos[i].program;
-			if (handle == program->handle)
-				return handle;
+			if (mesh->vaos[i].program == program->handle)
+				return mesh->vaos[i].handle;
 		}
 
 		// Create new vao for this mesh/program
