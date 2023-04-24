@@ -299,27 +299,47 @@ void App::InitMesh(const char* path, bool draw)
 
 void Update(App* app)
 {
+    app->GUI();
+
+    ImGui::Render();
+
+    //Clear input state if required by ImGui
+    if (ImGui::GetIO().WantCaptureKeyboard)
+        for (u32 i = 0; i < KEY_COUNT; ++i)
+            app->input.keys[i] = BUTTON_IDLE;
+
+    if (ImGui::GetIO().WantCaptureMouse)
+        for (u32 i = 0; i < MOUSE_BUTTON_COUNT; ++i)
+            app->input.mouseButtons[i] = BUTTON_IDLE;
+
+    app->Input();
+
+}
+
+void App::GUI()
+{
+    // GUI
     static bool showFps = true;
 
-    ImGuiDockNodeFlags dockspace_flags = (ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_PassthruCentralNode);
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->Pos);
-    ImGui::SetNextWindowSize(viewport->Size);
-    ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    //ImGuiDockNodeFlags dockspace_flags = (ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_PassthruCentralNode);
+    //ImGuiViewport* viewport = ImGui::GetMainViewport();
+    //ImGui::SetNextWindowPos(viewport->Pos);
+    //ImGui::SetNextWindowSize(viewport->Size);
+    //ImGui::SetNextWindowViewport(viewport->ID);
+    //ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-    ImGui::Begin("##Docking", (bool*)0, (ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus));
+    //ImGui::Begin("##Docking", (bool*)0, (ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus));
 
-    ImGui::PopStyleVar();
+    //ImGui::PopStyleVar();
 
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.ConfigFlags & (ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable))
-    {
-        ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
-        ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), dockspace_flags);
-    }
+    //ImGuiIO& io = ImGui::GetIO();
+    //if (io.ConfigFlags & (ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable))
+    //{
+    //    ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
+    //    ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), dockspace_flags);
+    //}
 
-    ImGui::End();
+    //ImGui::End();
 
     if (ImGui::BeginMainMenuBar())
     {
@@ -336,17 +356,17 @@ void Update(App* app)
         {
             if (ImGui::BeginMenu("OpenGL"))
             {
-                ImGui::BulletText("Version   -> %s", app->openGLInformation.version);
-                ImGui::BulletText("Renderer  -> %s", app->openGLInformation.renderer);
-                ImGui::BulletText("Vendor    -> %s", app->openGLInformation.vendor);
-                ImGui::BulletText("Num Extns -> %d", app->openGLInformation.numExtensions);
+                ImGui::BulletText("Version   -> %s", openGLInformation.version);
+                ImGui::BulletText("Renderer  -> %s", openGLInformation.renderer);
+                ImGui::BulletText("Vendor    -> %s", openGLInformation.vendor);
+                ImGui::BulletText("Num Extns -> %d", openGLInformation.numExtensions);
                 if (ImGui::BeginMenu(" · Extensions"))
                 {
-                    for (std::vector<const char*>::iterator it = app->openGLInformation.extensions.begin(); it != app->openGLInformation.extensions.end(); ++it)
+                    for (std::vector<const char*>::iterator it = openGLInformation.extensions.begin(); it != openGLInformation.extensions.end(); ++it)
                         ImGui::Text("%s", (*it));
                     ImGui::EndMenu();
                 }
-                
+
                 ImGui::EndMenu();
             }
             ImGui::EndMenu();
@@ -354,15 +374,23 @@ void Update(App* app)
         ImGui::EndMainMenuBar();
     }
 
-    if (ImGui::Begin("##Info", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus))
-    {
-        ImGui::SetWindowSize(ImVec2(app->displaySize.x, app->displaySize.y));
-        if (ImGui::Button("Reload")) app->HotReload();
-        if (showFps) ImGui::Text("FPS: %f", float(1.0f / app->deltaTime));
+    //if (ImGui::Begin("##Info", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus))
+    //{
+    //    ImGui::SetWindowSize(ImVec2(displaySize.x, displaySize.y));
+    //    if (ImGui::Button("Reload")) HotReload();
+    //    if (showFps) ImGui::Text("FPS: %f", float(1.0f / deltaTime));
 
-        ImGui::End();
-    }
+    //    ImGui::End();
+    //}
 
+}
+
+void App::Input()
+{
+    if (!input.Active()) return;
+
+    if (input.GetKey(K_A)) 
+        Translate(10, 0, 0);
 
 }
 

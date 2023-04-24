@@ -7,6 +7,7 @@
 
 // layout(location=x) means the attribute pointer id we set on "glVertexAttribPointer(x, bla, bla, bla, blabla, bla));"
 layout(location=0) in vec3 aPosition;
+layout(location=1) in vec3 aNormal;
 layout(location=2) in vec2 aTexCoord;
 
 layout(binding=1, std140) uniform LocalParams
@@ -21,16 +22,14 @@ out vec3 vNormal;
 
 void main()
 {
-	float clippingScale = 5.0;
-	
 	vTexCoord = aTexCoord;
 	vPosition = vec3( uWorldMatrix * vec4(aPosition, 1.0) );
-	//vNormal   = vec3( uWorldMatrix * vec4(aNormal, 0.0) );
+	vNormal   = vec3( uWorldMatrix * vec4(aNormal, 0.0) );
 
-	//gl_Position = vec4(aPosition, clippingScale);
-	gl_Position = uWorldViewProjectionMatrix * vec4(aPosition, clippingScale);
+	gl_Position = uWorldViewProjectionMatrix * vec4(aPosition, 5.0f);
 
-	gl_Position.z = -gl_Position.z;
+	//gl_Position = vec4(aPosition, 5.0f);
+	//gl_Position.z = -gl_Position.z;
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////

@@ -50,11 +50,49 @@ enum ButtonState {
     BUTTON_RELEASE
 };
 
-struct Input {
+struct Input 
+{
     glm::vec2   mousePos;
     glm::vec2   mouseDelta;
     ButtonState mouseButtons[MOUSE_BUTTON_COUNT];
     ButtonState keys[KEY_COUNT];
+
+    bool GetMouseButtonDown(MouseButton button)
+    {
+        return mouseButtons[button] == BUTTON_PRESS;
+    }
+
+    bool GetMouseButton(MouseButton button)
+    {
+        return mouseButtons[button] == BUTTON_PRESSED;
+    }
+
+    bool GetMouseButtonUp(MouseButton button)
+    {
+        return mouseButtons[button] == BUTTON_RELEASE;
+    }
+
+    bool GetKeyDown(Key key)
+    {
+        return keys[key] == BUTTON_PRESS;
+    }
+
+    bool GetKey(Key key)
+    {
+        return keys[key] == BUTTON_PRESSED;
+    }
+
+    bool GetKeyUp(Key key)
+    {
+        return keys[key] == BUTTON_RELEASE;
+    }
+
+    void Active(bool set) { active = set; }
+    bool Active() { return active; }
+
+private:
+
+    bool active = true;
 };
 
 struct String

@@ -68,6 +68,10 @@ struct App
 
     // Input
     Input input;
+    void Input();
+
+    // Gui
+    void GUI();
 
     // Graphics
     OpenGLInfo openGLInformation;
@@ -99,6 +103,15 @@ struct App
     GLuint uniformBufferHandle;
     glm::mat4 worldMatrix;
     glm::mat4 worldViewProjectionMatrix;
+
+    void Translate(float x, float y, float z)
+    {
+        glm::translate(worldMatrix, glm::vec3(x, y, z));
+    }
+    void Translate(glm::vec3 delta)
+    {
+        glm::translate(worldMatrix, delta);
+    }
 };
 
 void Init(App* app);

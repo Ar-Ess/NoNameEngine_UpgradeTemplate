@@ -66,22 +66,17 @@ void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, unsig
 
     // create the vertex format
     VertexBufferLayout vertexBufferLayout = {};
-    vertexBufferLayout.attributes.emplace_back(new VertexBufferAttribute( 0, 3, 0 ));
-    vertexBufferLayout.attributes.emplace_back(new VertexBufferAttribute( 1, 3, 3 * sizeof(float) ));
-    vertexBufferLayout.stride = 6 * sizeof(float);
-    if (hasTexCoords)
-    {
-        vertexBufferLayout.attributes.emplace_back(new VertexBufferAttribute( 2, 2, vertexBufferLayout.stride ));
-        vertexBufferLayout.stride += 2 * sizeof(float);
-    }
+    vertexBufferLayout.AddAttribute<float>(new VertexBufferAttribute(0, 3));
+    vertexBufferLayout.AddAttribute<float>(new VertexBufferAttribute(1, 3));
+    if (hasTexCoords) vertexBufferLayout.AddAttribute<float>(new VertexBufferAttribute(2, 2));
     if (hasTangentSpace)
     {
-        vertexBufferLayout.attributes.emplace_back(new VertexBufferAttribute( 3, 3, vertexBufferLayout.stride ));
-        vertexBufferLayout.stride += 3 * sizeof(float);
-
-        vertexBufferLayout.attributes.emplace_back(new VertexBufferAttribute( 4, 3, vertexBufferLayout.stride ));
-        vertexBufferLayout.stride += 3 * sizeof(float);
+        vertexBufferLayout.AddAttribute<float>(new VertexBufferAttribute(3, 3));
+        vertexBufferLayout.AddAttribute<float>(new VertexBufferAttribute(4, 3));
     }
+
+    vertexBufferLayout.Bound();
+
 
     // add the submesh into the mesh
     Mesh* m = new Mesh();
