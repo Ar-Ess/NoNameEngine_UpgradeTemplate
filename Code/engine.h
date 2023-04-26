@@ -9,6 +9,7 @@
 #include "Material.h"
 #include "Texture.h"
 #include "Program.h"
+#include "Camera.h"
 
 #include "Typedef.h"
 
@@ -101,17 +102,8 @@ struct App
     }
 
     GLuint uniformBufferHandle;
-    glm::mat4 worldMatrix;
-    glm::mat4 worldViewProjectionMatrix;
 
-    void Translate(float x, float y, float z)
-    {
-        glm::translate(worldMatrix, glm::vec3(x, y, z));
-    }
-    void Translate(glm::vec3 delta)
-    {
-        glm::translate(worldMatrix, delta);
-    }
+    Camera* cam = nullptr;
 };
 
 void Init(App* app);

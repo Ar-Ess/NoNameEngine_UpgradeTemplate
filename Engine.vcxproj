@@ -33,6 +33,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\AssimpLoading.h" />
+    <ClInclude Include="Code\Camera.h" />
     <ClInclude Include="Code\engine.h" />
     <ClInclude Include="Code\Material.h" />
     <ClInclude Include="Code\Mesh.h" />

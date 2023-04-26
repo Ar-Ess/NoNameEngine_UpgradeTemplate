@@ -134,6 +134,9 @@
     <ClInclude Include="Code\Typedef.h">
       <Filter>Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Camera.h">
+      <Filter>Engine\Internal</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="WorkingDir\TextureShader.glsl">

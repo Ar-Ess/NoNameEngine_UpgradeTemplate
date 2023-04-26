@@ -178,8 +178,7 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
-    app->worldMatrix = glm::mat4(1);
-    app->worldViewProjectionMatrix = glm::mat4(1);
+    app->cam = new Camera(app->displaySize.x/app->displaySize.y, 0.1, 1000);
 
     if (GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 3))
         glDebugMessageCallback(OnGlError, app);
@@ -390,7 +389,19 @@ void App::Input()
     if (!input.Active()) return;
 
     if (input.GetKey(K_A)) 
-        Translate(10, 0, 0);
+        cam->Translate( 0.1, 0, 0);
+
+    if (input.GetKey(K_D))
+        cam->Translate(-0.1, 0, 0);
+
+    if (input.GetKey(K_W))
+        cam->Translate(0, 0,  0.1);
+
+    if (input.GetKey(K_S))
+        cam->Translate(0, 0, -0.1);
+
+    if (input.GetMouseButton(LEFT))
+        cam->LookAt(input.mouseDelta, 200);
 
 }
 
@@ -410,10 +421,10 @@ void Render(App* app)
     u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
     u32 bufferHead = 0;
 
-    memcpy(bufferData + bufferHead, glm::value_ptr(app->worldMatrix), sizeof(glm::mat4));
+    memcpy(bufferData + bufferHead, app->cam->WorldPointerValue(), sizeof(glm::mat4));
     bufferHead += sizeof(glm::mat4);
 
-    memcpy(bufferData + bufferHead, glm::value_ptr(app->worldViewProjectionMatrix), sizeof(glm::mat4));
+    memcpy(bufferData + bufferHead, app->cam->GlobalPointerValue(), sizeof(glm::mat4));
     bufferHead += sizeof(glm::mat4);
 
     glUnmapBuffer(GL_UNIFORM_BUFFER);
