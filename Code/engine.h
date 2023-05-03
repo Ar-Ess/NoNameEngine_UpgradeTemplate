@@ -104,6 +104,14 @@ struct App
     GLuint uniformBufferHandle;
 
     Camera* cam = nullptr;
+
+    const glm::f32* GlobalPointerValue(glm::mat4 world)
+    {
+        global = cam->projection * cam->view * world;
+        return glm::value_ptr(global);
+    }
+
+    glm::mat4 global = glm::mat4(1.0f);
 };
 
 void Init(App* app);

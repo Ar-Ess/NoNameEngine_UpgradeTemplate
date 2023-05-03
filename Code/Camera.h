@@ -4,60 +4,87 @@ class Camera
 {
 public:
 
-    Camera(float aspectRatio, float znear, float zfar)
+    Camera(glm::vec3 position, float aspectRatio, float znear, float zfar)
     {
         this->aspectRatio = aspectRatio;
         this->znear = znear;
         this->zfar = zfar;
-        this->target = glm::vec3(0, 0, 0);
+        this->position = position;
+        this->target = glm::vec3(1.0f);
 
         this->projection = glm::perspective(glm::radians(60.f), aspectRatio, znear, zfar);
-        this->view = glm::lookAt(glm::vec3(0, 0, 0), target, glm::vec3(0, 1, 0));
-        this->world = glm::mat4(1);
+        this->view = glm::lookAt(position, target, glm::vec3(0, 1, 0));
+    }
+
+    void Update()
+    {
+        view = glm::lookAt(position, target, glm::vec3(0, 1, 0));
     }
 
     glm::vec3 Position() const
     {
-        return glm::vec3(world[0].w, world[1].w, world[2].w);
+        return position;
     }
 
-    void Translate(float x, float y, float z)
+    void Translate(float side, float y, float zoom)
     {
-        world = glm::translate(world, glm::vec3(x, y, z));
+        glm::vec3 forward = Forward();
+        glm::vec3 right = Right();
+        glm::vec3 up = Up();
+
+        glm::vec3 z = zoom * forward;
+        glm::vec3 s = side * right;
+        glm::vec3 u = y * up;
+
+        position += z + s + u;
+        target += z + s + u;
     }
     void Translate(glm::vec3 delta)
     {
-        world = glm::translate(world, delta);
+        glm::vec3 forward = Forward();
+        glm::vec3 right = Right();
+        glm::vec3 up = Up();
+
+        glm::vec3 z = delta.z * forward;
+        glm::vec3 s = delta.x * right;
+        glm::vec3 u = delta.y * up;
+
+        position += z + s + u;
+        target += z + s + u;
     }
 
     void LookAt(glm::vec2 delta, float velocity)
     {
-        //if (delta.x + delta.y < 0.0001f) return;
-        //target.x += delta.x * velocity;
-        //target.z += delta.y * velocity;
-
-        //worldViewProjectionMatrix = glm::lookAt(Position(), target, glm::vec3(0, 1, 0));
+        if (glm::abs(delta.x) + glm::abs(delta.y) < 0.0001f) return;
+        target.x += delta.x * velocity;
+        target.y += delta.y * -velocity;
     }
 
-    const glm::f32* WorldPointerValue() const
+    glm::vec3 Forward() const
     {
-        return glm::value_ptr(world);
+        return glm::normalize(glm::vec3(target - position));
     }
 
-    const glm::f32* GlobalPointerValue()
+    glm::vec3 Right() const
     {
-        global = projection * view * world;
-        return glm::value_ptr(global);
+        return glm::cross(Forward(), Up());
+    }
+
+    glm::vec3 Up() const
+    {
+        return glm::vec3(0, 1, 0);
     }
 
 private:
 
+    friend struct App;
+
     glm::mat4 projection; // const
     glm::mat4 view;
-    glm::mat4 world;
-    glm::mat4 global;
 
+    glm::vec3 position;
     glm::vec3 target;
+
     float aspectRatio = 0;
     float znear = 0;
     float zfar = 0;

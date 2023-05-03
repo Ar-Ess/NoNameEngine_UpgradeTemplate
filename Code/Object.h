@@ -15,7 +15,9 @@ public:
 
 	Object(ObjectType type) : 
 		type(type)
-	{}
+	{
+		world = glm::mat4(1.0f);
+	}
 
 	ObjectType Type() const
 	{
@@ -24,6 +26,7 @@ public:
 
 public:
 
+	glm::mat4 world;
 	GLuint vertexs;
 	GLuint indexs;
 	GLuint texUniform;
