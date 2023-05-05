@@ -102,6 +102,7 @@ struct App
     }
 
     GLuint uniformBufferHandle;
+    intptr_t selected = 0;
 
     Camera* cam = nullptr;
 

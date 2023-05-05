@@ -7,6 +7,7 @@
 #include "AssimpLoading.h"
 
 #define BINDING(b) b
+#define ALIGN(value, alignment) (value + alignment - 1) & ~(alignment - 1)
 
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 {
@@ -194,6 +195,7 @@ void Init(App* app)
     //app->InitTexturedQuad("color_normal.png", false);
     //app->InitTexturedQuad("color_magenta.png", false);
     app->InitMesh("Patrick/Patrick.obj", true);
+    app->InitMesh("Patrick/Patrick.obj", true);
 }
 
 void App::InitTexturedQuad(const char* texture, bool draw)
@@ -289,6 +291,7 @@ void App::InitMesh(const char* path, bool draw)
     m->program = program;
     m->draw = draw;
     m->texUniform = texUniform;
+    m->name = "Patrick";
 
     for (std::vector<Mesh*>::iterator it = m->meshes.begin(); it != m->meshes.end(); ++it)
         for (std::vector<Vao>::iterator ot = (*it)->vaos.begin(); ot != (*it)->vaos.end(); ++ot)
@@ -375,14 +378,53 @@ void App::GUI()
         ImGui::EndMainMenuBar();
     }
 
-    //if (ImGui::Begin("##Info", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus))
-    //{
-    //    ImGui::SetWindowSize(ImVec2(displaySize.x, displaySize.y));
-    //    if (ImGui::Button("Reload")) HotReload();
-    //    if (showFps) ImGui::Text("FPS: %f", float(1.0f / deltaTime));
+    if (ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+    {
+        for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
+        {
+            Object* o = (*it);
+            ImGui::PushID(o->id);
+            if (ImGui::Selectable(o->name, selected == o->id))
+            {
+                if (selected == o->id)  selected = 0;
+                else selected = o->id;
+            }
 
-    //    ImGui::End();
-    //}
+            if (selected != o->id)
+            {
+                ImGui::PopID();
+                continue;
+            }
+
+            ImGui::Separator();
+            
+            bool change = false;
+            ImGui::BulletText("Position:");
+            if (ImGui::DragFloat("x", &o->position.x, 0.1)) change = true;
+            if (ImGui::DragFloat("y", &o->position.y, 0.1)) change = true;
+            if (ImGui::DragFloat("z", &o->position.z, 0.1)) change = true;
+
+            ImGui::BulletText("Rotation:");
+            if (ImGui::DragFloat("X", &o->rotation.x, 0.1)) change = true;
+            if (ImGui::DragFloat("Y", &o->rotation.y, 0.1)) change = true;
+            if (ImGui::DragFloat("Z", &o->rotation.z, 0.1)) change = true;
+
+            if (change) o->UpdateTransform();
+
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::PopID();
+        }
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("##Info", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize))
+    {
+        if (ImGui::Button("Reload")) HotReload();
+        if (showFps) ImGui::Text("FPS: %f", float(1.0f / deltaTime));
+    }
+    ImGui::End();
 
 }
 
@@ -423,11 +465,21 @@ void Render(App* app)
     u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
     u32 bufferHead = 0;
 
-    memcpy(bufferData + bufferHead, glm::value_ptr(app->objects[0]->world), sizeof(glm::mat4));
-    bufferHead += sizeof(glm::mat4);
+    for (std::vector<Object*>::iterator it = app->objects.begin(); it != app->objects.end(); ++it)
+    {
+        Object* o = (*it);
 
-    memcpy(bufferData + bufferHead, app->GlobalPointerValue(app->objects[0]->world), sizeof(glm::mat4));
-    bufferHead += sizeof(glm::mat4);
+        bufferHead = ALIGN(bufferHead, app->GetUniformBlockAlignment());
+        o->localParamsOffset = bufferHead;
+
+        memcpy(bufferData + bufferHead, glm::value_ptr(o->world), sizeof(glm::mat4));
+        bufferHead += sizeof(glm::mat4);
+
+        memcpy(bufferData + bufferHead, app->GlobalPointerValue(o->world), sizeof(glm::mat4));
+        bufferHead += sizeof(glm::mat4);
+
+        o->localParamsSize = bufferHead - o->localParamsOffset;
+    }
 
     glUnmapBuffer(GL_UNIFORM_BUFFER);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
