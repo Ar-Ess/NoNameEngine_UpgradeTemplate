@@ -5,6 +5,7 @@
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include "AssimpLoading.h"
+#include "BufferManagement.h"
 
 #define BINDING(b) b
 #define ALIGN(value, alignment) (value + alignment - 1) & ~(alignment - 1)
@@ -184,10 +185,8 @@ void Init(App* app)
     if (GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 3))
         glDebugMessageCallback(OnGlError, app);
 
-    glGenBuffers(1, &app->uniformBufferHandle);
-    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBufferHandle);
-    glBufferData(GL_UNIFORM_BUFFER, app->GetMaxUniformBlockSize(), NULL, GL_STREAM_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    app->cbuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
 
     //app->InitTexturedQuad("dice.png", false);
     //app->InitTexturedQuad("color_white.png", false);
@@ -196,6 +195,8 @@ void Init(App* app)
     //app->InitTexturedQuad("color_magenta.png", false);
     app->InitMesh("Patrick/Patrick.obj", true);
     app->InitMesh("Patrick/Patrick.obj", true);
+
+    app->AddLight(LightType::LT_POINT, glm::vec3(1, 1, 1), glm::vec3(1, 0, 0));
 }
 
 void App::InitTexturedQuad(const char* texture, bool draw)
@@ -297,6 +298,11 @@ void App::InitMesh(const char* path, bool draw)
         for (std::vector<Vao>::iterator ot = (*it)->vaos.begin(); ot != (*it)->vaos.end(); ++ot)
             (*ot).program = m->program;
 
+}
+
+void App::AddLight(LightType type, glm::vec3 color, glm::vec3 position, glm::vec3 direction)
+{
+    lights.push_back(new Light(type, color, position, direction));
 }
 
 void Update(App* app)
@@ -451,42 +457,54 @@ void App::Input()
 
 void Render(App* app)
 {
-    // Asignar el color base
-    glClearColor(0.1f, 0.1f, 0.1, 1.0f);
-    // Borrar el buffer de color i el buffer de profunditat
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Defineix el viewport on es renderitza tot
-    glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+    glClearColor(0.1f, 0.1f, 0.1, 1.0f); // Asignar el color base
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Borrar color & depth buffer
+    glViewport(0, 0, app->displaySize.x, app->displaySize.y); // Defineix viewport on renderitzar
 
     // Fill Uniform Buffer once per update
-    glBindBuffer(GL_UNIFORM_BUFFER, app->uniformBufferHandle);
+    BindBuffer(app->cbuffer);
+    MapBuffer(app->cbuffer, GL_WRITE_ONLY);
 
-    u8* bufferData = (u8*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    u32 bufferHead = 0;
+    // -- Global Parameters
+    app->globalParamsOffset = app->cbuffer.head;
+    PushVec3(app->cbuffer, app->cam->Position());
+    PushUInt(app->cbuffer, app->lights.size());
 
+    for (std::vector<Light*>::iterator it = app->lights.begin(); it != app->lights.end(); ++it)
+    {
+        AlignHead(app->cbuffer, sizeof(glm::vec4));
+
+        Light* l = (*it);
+        PushUInt(app->cbuffer, (int)l->type);
+        PushVec3(app->cbuffer, l->color);
+        PushVec3(app->cbuffer, l->direction);
+        PushVec3(app->cbuffer, l->position);
+    }
+
+    app->globalParamsSize = app->cbuffer.head - app->globalParamsOffset;
+
+    // -- Local Parameters
+    u32 localParamsFullSize = 0;
     for (std::vector<Object*>::iterator it = app->objects.begin(); it != app->objects.end(); ++it)
     {
         Object* o = (*it);
 
-        bufferHead = ALIGN(bufferHead, app->GetUniformBlockAlignment());
-        o->localParamsOffset = bufferHead;
+        AlignHead(app->cbuffer, app->GetUniformBlockAlignment());
+        
+        o->localParamsOffset = app->cbuffer.head;
+        PushMat4(app->cbuffer, o->world);
+        PushMat4(app->cbuffer, app->GlobalMatrix(o->world));
 
-        memcpy(bufferData + bufferHead, glm::value_ptr(o->world), sizeof(glm::mat4));
-        bufferHead += sizeof(glm::mat4);
-
-        memcpy(bufferData + bufferHead, app->GlobalPointerValue(o->world), sizeof(glm::mat4));
-        bufferHead += sizeof(glm::mat4);
-
-        o->localParamsSize = bufferHead - o->localParamsOffset;
+        o->localParamsSize = app->cbuffer.head - o->localParamsOffset;
+        localParamsFullSize += o->localParamsSize;
     }
 
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    UnmapBuffer(app->cbuffer);
+    UnbindBuffer(app->cbuffer);
 
     u32 blockOffset = 0;
-    u32 blockSize = sizeof(glm::mat4) * 2;
-    glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->uniformBufferHandle, blockOffset, blockSize);
+    blockOffset = BindBufferRange(app->cbuffer, BINDING(0), blockOffset, app->globalParamsSize); // Binding Global Params
+    blockOffset = BindBufferRange(app->cbuffer, BINDING(1), blockOffset, localParamsFullSize); // Binding Local Params
 
     ///////////////////
 
@@ -514,7 +532,6 @@ void Render(App* app)
             glUniform1i(o->texUniform, 0);
             // Activate slot for a texture
             glActiveTexture(GL_TEXTURE0);
-
 
             // Bind the texture of the dice
             glBindTexture(GL_TEXTURE_2D, app->textures[tQ->texture]->handle);

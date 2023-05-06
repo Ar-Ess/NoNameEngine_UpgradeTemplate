@@ -10,8 +10,14 @@
 #include "Texture.h"
 #include "Program.h"
 #include "Camera.h"
+#include "Light.h"
+#include "Image.h"
+#include "Vertex.h"
+#include "Buffer.h"
 
 #include "Typedef.h"
+
+struct Buffer;
 
 struct OpenGLInfo
 {
@@ -35,36 +41,10 @@ struct OpenGLInfo
     std::vector<const char*> extensions;
 };
 
-struct Image
-{
-    void* pixels;
-    ivec2 size;
-    i32   nchannels;
-    i32   stride;
-};
-
-struct Vertex
-{
-    Vertex(float x, float y, float z, float uvx, float uvy)
-    {
-        this->pos = vec3(x, y, z);
-        this->uv = vec2(uvx, uvy);
-    }
-
-    Vertex(vec3 pos, vec2 uv)
-    {
-        this->pos = pos;
-        this->uv =uv;
-    }
-
-    vec3 pos;
-    vec2 uv;
-};
-
 struct App
 {
     // Loop
-    float deltaTime;
+    float deltaTime = 0;
     bool isRunning;
 
     // Input
@@ -81,11 +61,12 @@ struct App
 
     std::vector<Texture*> textures;
     std::vector<Program*> programs;
-    std::vector<Object*> objects;
+    std::vector<Object*>  objects;
     std::vector<Material*> materials;
 
     void InitTexturedQuad(const char* texture, bool draw = true);
     void InitMesh(const char* path, bool draw = true);
+    void AddLight(LightType type, glm::vec3 color, glm::vec3 position, glm::vec3 direction = glm::vec3(0, -1, 0));
     void HotReload();
 
     GLint GetMaxUniformBlockSize() const
@@ -101,18 +82,22 @@ struct App
         return a;
     }
 
-    GLuint uniformBufferHandle;
+    GLuint uniformBufferHandle = 0;
     intptr_t selected = 0;
 
-    Camera* cam = nullptr;
+    std::vector<Light*> lights;
 
-    const glm::f32* GlobalPointerValue(glm::mat4 world)
+    glm::mat4 GlobalMatrix(glm::mat4 world)
     {
         global = cam->projection * cam->view * world;
-        return glm::value_ptr(global);
+        return global;
     }
 
+    Camera* cam = nullptr;
     glm::mat4 global = glm::mat4(1.0f);
+    u32 globalParamsOffset = 0;
+    u32 globalParamsSize = 0;
+    Buffer cbuffer;
 };
 
 void Init(App* app);

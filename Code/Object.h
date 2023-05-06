@@ -36,18 +36,18 @@ public:
 public:
 
 	glm::mat4 world;
-	u32 localParamsOffset;
-	u32 localParamsSize;
+	u32 localParamsOffset = 0;
+	u32 localParamsSize = 0;
 	intptr_t id = 0;
 	const char* name = nullptr;
 
 	glm::vec3 position;
 	glm::vec3 rotation;
 
-	GLuint vertexs;
-	GLuint indexs;
-	GLuint texUniform;
-	GLuint program;
+	GLuint vertexs = 0;
+	GLuint indexs = 0;
+	GLuint texUniform = 0;
+	GLuint program = 0;
 	bool draw = true;
 
 protected:

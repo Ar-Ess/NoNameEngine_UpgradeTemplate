@@ -33,8 +33,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\AssimpLoading.h" />
+    <ClInclude Include="Code\Buffer.h" />
+    <ClInclude Include="Code\BufferManagement.h" />
     <ClInclude Include="Code\Camera.h" />
     <ClInclude Include="Code\engine.h" />
+    <ClInclude Include="Code\Image.h" />
+    <ClInclude Include="Code\Light.h" />
     <ClInclude Include="Code\Material.h" />
     <ClInclude Include="Code\Mesh.h" />
     <ClInclude Include="Code\Model.h" />
@@ -45,6 +49,7 @@
     <ClInclude Include="Code\TexturedQuad.h" />
     <ClInclude Include="Code\Typedef.h" />
     <ClInclude Include="Code\Vao.h" />
+    <ClInclude Include="Code\Vertex.h" />
     <ClInclude Include="Code\VertexBufferAttibute.h" />
     <ClInclude Include="Code\VertexBufferLayout.h" />
     <ClInclude Include="Code\VertexShaderAttribute.h" />
