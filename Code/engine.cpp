@@ -185,18 +185,24 @@ void Init(App* app)
     if (GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 3))
         glDebugMessageCallback(OnGlError, app);
 
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     app->cbuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
 
-    //app->InitTexturedQuad("dice.png", false);
+    //app->InitTexturedQuad("dice.png", true);
     //app->InitTexturedQuad("color_white.png", false);
     //app->InitTexturedQuad("color_black.png", false);
     //app->InitTexturedQuad("color_normal.png", false);
     //app->InitTexturedQuad("color_magenta.png", false);
-    app->InitMesh("Patrick/Patrick.obj", true);
-    app->InitMesh("Patrick/Patrick.obj", true);
+    app->InitModel("Patrick/Patrick.obj", true);
+    Object* o = app->InitModel("Primitives/Plane/Plane.obj", true);
+    o->position.y = -4;
+    o->UpdateTransform();
 
-    app->AddLight(LightType::LT_POINT, glm::vec3(1, 1, 1), glm::vec3(1, 0, 0));
+    app->AddDirectLight(glm::vec3(1, 1, 1), glm::vec3(1, 0, 0));
+    app->AddPointLight(glm::vec3(1, 1, 1), glm::vec3(1, 0, 0));
 }
 
 void App::InitTexturedQuad(const char* texture, bool draw)
@@ -266,9 +272,11 @@ void App::InitTexturedQuad(const char* texture, bool draw)
     quad->texture = LoadTexture2D(this, texture);
 
     objects.emplace_back(quad);
+
+    quad->name = "Quad";
 }
 
-void App::InitMesh(const char* path, bool draw)
+Object* App::InitModel(const char* path, bool draw)
 {
     u32 program = LoadProgram(this, "MeshShader.glsl", "TEXTURED_GEOMETRY");
 
@@ -292,17 +300,22 @@ void App::InitMesh(const char* path, bool draw)
     m->program = program;
     m->draw = draw;
     m->texUniform = texUniform;
-    m->name = "Patrick";
 
     for (std::vector<Mesh*>::iterator it = m->meshes.begin(); it != m->meshes.end(); ++it)
         for (std::vector<Vao>::iterator ot = (*it)->vaos.begin(); ot != (*it)->vaos.end(); ++ot)
             (*ot).program = m->program;
 
+    return m;
 }
 
-void App::AddLight(LightType type, glm::vec3 color, glm::vec3 position, glm::vec3 direction)
+void App::AddPointLight(glm::vec3 color, glm::vec3 position)
 {
-    lights.push_back(new Light(type, color, position, direction));
+    lights.push_back(new Light(LightType::LT_POINT, color, position, glm::vec3()));
+}
+
+void App::AddDirectLight(glm::vec3 color, glm::vec3 direction)
+{
+    lights.push_back(new Light(LightType::LT_DIRECTIONAL, color, glm::vec3(), direction));
 }
 
 void Update(App* app)
@@ -390,7 +403,7 @@ void App::GUI()
         {
             Object* o = (*it);
             ImGui::PushID(o->id);
-            if (ImGui::Selectable(o->name, selected == o->id))
+            if (ImGui::Selectable(o->name.c_str(), selected == o->id))
             {
                 if (selected == o->id)  selected = 0;
                 else selected = o->id;
@@ -403,19 +416,34 @@ void App::GUI()
             }
 
             ImGui::Separator();
+
+            ImGui::PushItemWidth(50);
             
             bool change = false;
             ImGui::BulletText("Position:");
-            if (ImGui::DragFloat("x", &o->position.x, 0.1)) change = true;
-            if (ImGui::DragFloat("y", &o->position.y, 0.1)) change = true;
-            if (ImGui::DragFloat("z", &o->position.z, 0.1)) change = true;
+            if (ImGui::DragFloat("##1x", &o->position.x, 0.1, 0, 0, "X: %.2f")) change = true;
+            ImGui::SameLine();
+            if (ImGui::DragFloat("##1y", &o->position.y, 0.1, 0, 0, "Y: %.2f")) change = true;
+            ImGui::SameLine();
+            if (ImGui::DragFloat("##1z", &o->position.z, 0.1, 0, 0, "Z: %.2f")) change = true;
 
             ImGui::BulletText("Rotation:");
-            if (ImGui::DragFloat("X", &o->rotation.x, 0.1)) change = true;
-            if (ImGui::DragFloat("Y", &o->rotation.y, 0.1)) change = true;
-            if (ImGui::DragFloat("Z", &o->rotation.z, 0.1)) change = true;
+            if (ImGui::DragFloat("##2x", &o->rotation.x, 0.1, 0, 0, "X: %.2f")) change = true;
+            ImGui::SameLine();
+            if (ImGui::DragFloat("##2y", &o->rotation.y, 0.1, 0, 0, "Y: %.2f")) change = true;
+            ImGui::SameLine();
+            if (ImGui::DragFloat("##2z", &o->rotation.z, 0.1, 0, 0, "Z: %.2f")) change = true;
+
+            ImGui::BulletText("Scale:");
+            if (ImGui::DragFloat("##3x", &o->scale.x, 0.1, 0, 0, "X: %.2f")) change = true;
+            ImGui::SameLine();
+            if (ImGui::DragFloat("##3y", &o->scale.y, 0.1, 0, 0, "Y: %.2f")) change = true;
+            ImGui::SameLine();
+            if (ImGui::DragFloat("##3z", &o->scale.z, 0.1, 0, 0, "Z: %.2f")) change = true;
 
             if (change) o->UpdateTransform();
+
+            ImGui::PopItemWidth();
 
             ImGui::Separator();
             ImGui::Spacing();
@@ -502,9 +530,7 @@ void Render(App* app)
     UnmapBuffer(app->cbuffer);
     UnbindBuffer(app->cbuffer);
 
-    u32 blockOffset = 0;
-    blockOffset = BindBufferRange(app->cbuffer, BINDING(0), blockOffset, app->globalParamsSize); // Binding Global Params
-    blockOffset = BindBufferRange(app->cbuffer, BINDING(1), blockOffset, localParamsFullSize); // Binding Local Params
+    BindBufferRange(app->cbuffer, BINDING(0), 0, app->globalParamsSize); // Binding Global Params
 
     ///////////////////
 
@@ -522,11 +548,6 @@ void Render(App* app)
             glUseProgram(app->programs[tQ->vao.program]->handle);
             // Bind the vao vertex array
             glBindVertexArray(tQ->vao.handle);
-
-            // Enable Blend render mode
-            glEnable(GL_BLEND);
-            // Enable alpha function for blend
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
             // Send the texture as uniform variable to glsl script
             glUniform1i(o->texUniform, 0);
@@ -550,6 +571,9 @@ void Render(App* app)
         case ObjectType::O_MODEL:
         {
             Model* m = (Model*)o;
+
+            BindBufferRange(app->cbuffer, BINDING(1), o->localParamsOffset, o->localParamsSize); // Binding Local Params
+
             glUseProgram(app->programs[m->program]->handle);
 
             unsigned int size = m->meshes.size();

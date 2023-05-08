@@ -36,7 +36,6 @@ out vec3 vPosition;
 out vec3 vNormal;
 out vec3 vViewDir;
 
-
 void main()
 {
 	vTexCoord   = aTexCoord;

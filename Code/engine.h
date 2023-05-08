@@ -65,8 +65,9 @@ struct App
     std::vector<Material*> materials;
 
     void InitTexturedQuad(const char* texture, bool draw = true);
-    void InitMesh(const char* path, bool draw = true);
-    void AddLight(LightType type, glm::vec3 color, glm::vec3 position, glm::vec3 direction = glm::vec3(0, -1, 0));
+    Object* InitModel(const char* path, bool draw = true);
+    void AddPointLight(glm::vec3 color, glm::vec3 position);
+    void AddDirectLight(glm::vec3 color, glm::vec3 direction);
     void HotReload();
 
     GLint GetMaxUniformBlockSize() const

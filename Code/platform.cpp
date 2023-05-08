@@ -343,6 +343,14 @@ String GetDirectoryPart(String path)
     return str;
 }
 
+void GetFileName(std::string* string, const char* name)
+{
+    (*string) += name;
+    string->erase(string->begin(), string->begin() + string->find_last_of('/') + 1);
+    string->erase(string->begin() + string->find_first_of('.'), string->end());
+    
+}
+
 String ReadTextFile(const char* filepath)
 {
     String fileText = {};

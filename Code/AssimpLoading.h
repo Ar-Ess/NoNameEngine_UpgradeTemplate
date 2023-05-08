@@ -187,6 +187,8 @@ Model* LoadModel(App* app, const char* filename)
     u32 modelIdx = (u32)app->objects.size() - 1u;
 
     String directory = GetDirectoryPart(MakeString(filename));
+    GetFileName(&m->name, filename);
+    
 
     // Create a list of materials
     u32 baseMeshMaterialIndex = (u32)app->materials.size();

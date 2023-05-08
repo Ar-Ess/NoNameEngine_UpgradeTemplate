@@ -72,7 +72,7 @@ public:
 
     glm::vec3 Up() const
     {
-        return glm::vec3(0, 1, 0);
+        return glm::vec3(view[1].x, view[1].y, view[1].z);
     }
 
 private:
