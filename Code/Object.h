@@ -1,12 +1,14 @@
 #pragma once
 #include <glad/glad.h>
 #include "Vao.h"
+#include <imgui.h>
 
 enum class ObjectType
 {
 	O_EMPTY,
 	O_TEXTURED_QUAD,
-	O_MODEL
+	O_MODEL,
+	O_LIGHT
 };
 
 class Object
@@ -28,7 +30,7 @@ public:
 		return type;
 	}
 
-	void UpdateTransform()
+	virtual void UpdateTransform()
 	{
 		glm::mat4 pos = glm::translate(position);
 		glm::mat4 rot = glm::rotate(glm::radians(rotation.x), glm::vec3(1, 0, 0));
@@ -37,6 +39,11 @@ public:
 		glm::mat4 scl = glm::scale(scale);
 
 		world = pos * rot * scl;
+	}
+
+	virtual bool DrawGui()
+	{
+		return false;
 	}
 
 private:
@@ -67,7 +74,7 @@ public:
 	GLuint indexs = 0;
 	GLuint texUniform = 0;
 	GLuint program = 0;
-	bool draw = true;
+	bool active = true;
 
 protected:
 

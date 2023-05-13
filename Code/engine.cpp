@@ -1,7 +1,7 @@
 #include "engine.h"
 #include "TexturedQuad.h"
 #include "Model.h"
-#include <imgui.h>
+//#include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include "AssimpLoading.h"
@@ -202,10 +202,10 @@ void Init(App* app)
     o->UpdateTransform();
 
     app->AddDirectLight(glm::vec3(1, 1, 1), glm::vec3(1, 0, 0));
-    app->AddPointLight(glm::vec3(1, 1, 1), glm::vec3(1, 0, 0));
+    app->AddPointLight(glm::vec3(1, 1, 1), glm::vec3(0, 0, 5));
 }
 
-void App::InitTexturedQuad(const char* texture, bool draw)
+void App::InitTexturedQuad(const char* texture, bool active)
 {
     const Vertex vertex[] = {
         Vertex(-0.5f, -0.5f, 0.0f, 0.0f, 0.0f),
@@ -220,7 +220,7 @@ void App::InitTexturedQuad(const char* texture, bool draw)
     };
 
     TexturedQuad* quad = new TexturedQuad();
-    quad->draw = draw;
+    quad->active = active;
 
     // Generar buffer i et retorna id
     glGenBuffers(1, &quad->vertexs);
@@ -276,7 +276,7 @@ void App::InitTexturedQuad(const char* texture, bool draw)
     quad->name = "Quad";
 }
 
-Object* App::InitModel(const char* path, bool draw)
+Object* App::InitModel(const char* path, bool active)
 {
     u32 program = LoadProgram(this, "MeshShader.glsl", "TEXTURED_GEOMETRY");
 
@@ -298,7 +298,7 @@ Object* App::InitModel(const char* path, bool draw)
 
     Model* m = LoadModel(this, path);
     m->program = program;
-    m->draw = draw;
+    m->active = active;
     m->texUniform = texUniform;
 
     for (std::vector<Mesh*>::iterator it = m->meshes.begin(); it != m->meshes.end(); ++it)
@@ -310,12 +310,18 @@ Object* App::InitModel(const char* path, bool draw)
 
 void App::AddPointLight(glm::vec3 color, glm::vec3 position)
 {
-    lights.push_back(new Light(LightType::LT_POINT, color, position, glm::vec3()));
+    Light* l = new Light(LightType::LT_POINT, color, position, glm::vec3());
+    lights.push_back(l);
+    objects.push_back(l);
+    l->name = "Point Light";
 }
 
 void App::AddDirectLight(glm::vec3 color, glm::vec3 direction)
 {
-    lights.push_back(new Light(LightType::LT_DIRECTIONAL, color, glm::vec3(), direction));
+    Light* l = new Light(LightType::LT_DIRECTIONAL, color, glm::vec3(), direction);
+    lights.push_back(l);
+    objects.push_back(l);
+    l->name = "Directional Light";
 }
 
 void Update(App* app)
@@ -403,6 +409,8 @@ void App::GUI()
         {
             Object* o = (*it);
             ImGui::PushID(o->id);
+            ImGui::Checkbox("##active", &o->active);
+            ImGui::SameLine();
             if (ImGui::Selectable(o->name.c_str(), selected == o->id))
             {
                 if (selected == o->id)  selected = 0;
@@ -417,33 +425,7 @@ void App::GUI()
 
             ImGui::Separator();
 
-            ImGui::PushItemWidth(50);
-            
-            bool change = false;
-            ImGui::BulletText("Position:");
-            if (ImGui::DragFloat("##1x", &o->position.x, 0.1, 0, 0, "X: %.2f")) change = true;
-            ImGui::SameLine();
-            if (ImGui::DragFloat("##1y", &o->position.y, 0.1, 0, 0, "Y: %.2f")) change = true;
-            ImGui::SameLine();
-            if (ImGui::DragFloat("##1z", &o->position.z, 0.1, 0, 0, "Z: %.2f")) change = true;
-
-            ImGui::BulletText("Rotation:");
-            if (ImGui::DragFloat("##2x", &o->rotation.x, 0.1, 0, 0, "X: %.2f")) change = true;
-            ImGui::SameLine();
-            if (ImGui::DragFloat("##2y", &o->rotation.y, 0.1, 0, 0, "Y: %.2f")) change = true;
-            ImGui::SameLine();
-            if (ImGui::DragFloat("##2z", &o->rotation.z, 0.1, 0, 0, "Z: %.2f")) change = true;
-
-            ImGui::BulletText("Scale:");
-            if (ImGui::DragFloat("##3x", &o->scale.x, 0.1, 0, 0, "X: %.2f")) change = true;
-            ImGui::SameLine();
-            if (ImGui::DragFloat("##3y", &o->scale.y, 0.1, 0, 0, "Y: %.2f")) change = true;
-            ImGui::SameLine();
-            if (ImGui::DragFloat("##3z", &o->scale.z, 0.1, 0, 0, "Z: %.2f")) change = true;
-
-            if (change) o->UpdateTransform();
-
-            ImGui::PopItemWidth();
+            if (o->DrawGui()) o->UpdateTransform();
 
             ImGui::Separator();
             ImGui::Spacing();
@@ -507,6 +489,7 @@ void Render(App* app)
         PushVec3(app->cbuffer, l->color);
         PushVec3(app->cbuffer, l->direction);
         PushVec3(app->cbuffer, l->position);
+        PushUInt(app->cbuffer, l->active);
     }
 
     app->globalParamsSize = app->cbuffer.head - app->globalParamsOffset;
@@ -537,7 +520,7 @@ void Render(App* app)
     for (std::vector<Object*>::iterator it = app->objects.begin(); it != app->objects.end(); ++it)
     {
         Object* o = (*it);
-        if (!o->draw) continue;
+        if (!o->active) continue;
 
         switch (o->Type())
         {

@@ -64,8 +64,8 @@ struct App
     std::vector<Object*>  objects;
     std::vector<Material*> materials;
 
-    void InitTexturedQuad(const char* texture, bool draw = true);
-    Object* InitModel(const char* path, bool draw = true);
+    void InitTexturedQuad(const char* texture, bool active = true);
+    Object* InitModel(const char* path, bool active = true);
     void AddPointLight(glm::vec3 color, glm::vec3 position);
     void AddDirectLight(glm::vec3 color, glm::vec3 direction);
     void HotReload();
