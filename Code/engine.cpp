@@ -499,12 +499,21 @@ void Render(App* app)
     for (std::vector<Object*>::iterator it = app->objects.begin(); it != app->objects.end(); ++it)
     {
         Object* o = (*it);
+        if (o->Type() == ObjectType::O_LIGHT) continue;
 
         AlignHead(app->cbuffer, app->GetUniformBlockAlignment());
         
         o->localParamsOffset = app->cbuffer.head;
         PushMat4(app->cbuffer, o->world);
         PushMat4(app->cbuffer, app->GlobalMatrix(o->world));
+        if (o->Type() == ObjectType::O_MODEL)
+        {
+            Model* m = (Model*)o;
+            PushVec3(app->cbuffer, m->material.ambient);
+            PushVec3(app->cbuffer, m->material.diffuse);
+            PushVec3(app->cbuffer, m->material.specular);
+            PushUInt(app->cbuffer, m->material.bright);
+        }
 
         o->localParamsSize = app->cbuffer.head - o->localParamsOffset;
         localParamsFullSize += o->localParamsSize;

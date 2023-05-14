@@ -4,6 +4,7 @@
 #include "VertexBufferLayout.h"
 #include <vector>
 #include "Program.h"
+#include "ShaderMaterial.h"
 
 class Model : public Object
 {
@@ -104,6 +105,7 @@ public:
 
 public:
 
+	ShaderMaterial material;
 	std::vector<Mesh*> meshes;
 	std::vector<unsigned int> materials;
 

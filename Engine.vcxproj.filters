@@ -152,6 +152,9 @@
     <ClInclude Include="Code\Buffer.h">
       <Filter>Engine\Internal</Filter>
     </ClInclude>
+    <ClInclude Include="Code\ShaderMaterial.h">
+      <Filter>Engine\Internal</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="WorkingDir\TextureShader.glsl">
