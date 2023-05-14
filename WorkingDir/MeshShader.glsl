@@ -78,76 +78,48 @@ layout(binding = 0, std140) uniform GlobalParams
 
 layout(location=0) out vec4 fragColor;
 
-void Others()
+vec3 DirectionalLight(in Light light, in vec3 texColor)
 {
-		// ITERATION 2
-		//vec3 ambient = light.color * material.ambient;
-
-		// diffuse 
-		//vec3 lightDir = normalize(light.position - vPosition);
-		//float diff = max(dot(norm, lightDir), 0.0);
-		//vec3 diffuse = light.color * (diff * material.diffuse);
-
-		// specular
-		//vec3 reflectDir = reflect(-lightDir, norm);  
-		//float spec = pow(max(dot(vViewDir, reflectDir), 0.0), material.bright);
-		//vec3 specular = light.color * (spec * material.specular);  
-		
-		//vec3 result = ambient + diffuse + specular;
-		//color += (result * texColor) / uLightCount;
-
-		// ITERATION 1
-		//vec3 ret = vec3(0);
-		//float ambient = 0.1;
-		//vec3 lightDir = normalize(light.position - vPosition);
-
-		//float specular = 0.5;
-		//vec3 reflectDir = reflect(-lightDir, norm);
-
-		//float diffuse = max(dot(norm, lightDir), 0.0);
-		//float spec = pow(max(dot(vViewDir, reflectDir), 0.0), 32);
-
-		//ret += ambient * light.color; 
-		//ret += diffuse * light.color;
-		//ret += specular * spec * light.color;
-}
-
-vec3 DirectionalLight(in Light light)
-{
-	vec3 lightDir = normalize(light.direction);
 	vec3 ret = vec3(0);
+	float ambient = 0.1;
+	vec3 lightDir = normalize(light.direction);
+
+	float specular = 0.5;
 	vec3 reflectDir = reflect(-lightDir, vNormal);
 
 	float diffuse = max(dot(vNormal, lightDir), 0.0);
-	float specular = pow(max(dot(vViewDir, reflectDir), 0.0), vMaterial.bright);
+	float spec = pow(max(dot(vViewDir, reflectDir), 0.0), 32);
 
-	ret += light.color * vMaterial.ambient; 
-	ret += light.color * diffuse  * vMaterial.diffuse;
-	ret += light.color * specular * vMaterial.specular;
+	ret += ambient * light.color; 
+	ret += diffuse * light.color;
+	ret += specular * spec * light.color;
 
-	return ret;
+	return ret * texColor;
 }
 
-vec3 PointLight(in Light light)
+vec3 PointLight(in Light light, in vec3 texColor)
 {
-	float distance = length(light.position - vPosition);
 	float constant = 1;
 	float linear = 0.09;
 	float quadratic = 0.032;
-	float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance)); 
+	float distance    = length(light.position - vPosition);
+    float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));  
 
-	vec3 lightDir = normalize(light.position - vPosition);
 	vec3 ret = vec3(0);
+	float ambient = 0.1;
+	vec3 lightDir = normalize(light.position - vPosition);
+
+	float specular = 0.5;
 	vec3 reflectDir = reflect(-lightDir, vNormal);
 
 	float diffuse = max(dot(vNormal, lightDir), 0.0);
-	float specular = pow(max(dot(vViewDir, reflectDir), 0.0), vMaterial.bright);
+	float spec = pow(max(dot(vViewDir, reflectDir), 0.0), 32);
 
-	ret += light.color * vMaterial.ambient * attenuation; 
-	ret += light.color * diffuse  * vMaterial.diffuse  * attenuation;
-	ret += light.color * specular * vMaterial.specular  * attenuation;
+	ret += ambient * light.color * attenuation; 
+	ret += diffuse * light.color  * attenuation;
+	ret += specular * spec * light.color  * attenuation;
 
-	return ret;
+	return ret * texColor;
 }
 
 void main()
@@ -155,27 +127,20 @@ void main()
 	vec4 tex = texture(uTexture, vTexCoord);
 	vec3 texColor = vec3(tex);
 	vec3 color = vec3(0);
-	fragColor = vec4(0);
-	vec3 norm = normalize(vNormal);
-	Material material = vMaterial;
-
 
 	for (uint i = 0; i < uLightCount; ++i)
 	{
 		if (uLight[i].active == 0) continue;
 		Light light = uLight[i];
-		vec3 ret = vec3(0);
 
 		switch(light.type)
 		{
-			case 1: ret = DirectionalLight(light); break;
-			case 2: ret = PointLight(light); break;
+			case 1: color += DirectionalLight(light, texColor); break;
+			case 2: color += PointLight(light, texColor); break;
 		}
-
-		color += (ret * texColor);
 	}
 
-	fragColor = vec4(color, 1);
+	fragColor = vec4(color, 1.0);
 }
 
 #endif ///////////////////////////////////////////////
