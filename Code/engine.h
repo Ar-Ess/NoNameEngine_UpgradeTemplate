@@ -64,11 +64,12 @@ struct App
     std::vector<Object*>  objects;
     std::vector<Material*> materials;
 
-    void InitTexturedQuad(const char* texture, bool active = true);
-    Object* InitModel(const char* path, bool active = true);
+    void InitTexturedQuad(const char* texture, glm::vec3 position = glm::vec3(0.f));
+    Object* InitModel(const char* path, glm::vec3 position = glm::vec3(0.f));
     void AddPointLight(glm::vec3 color, glm::vec3 position);
     void AddDirectLight(glm::vec3 color, glm::vec3 direction);
     void AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff);
+    void DeleteObject(intptr_t selected);
 
     void HotReload();
 
@@ -101,6 +102,7 @@ struct App
     u32 globalParamsOffset = 0;
     u32 globalParamsSize = 0;
     Buffer cbuffer;
+    float ambient = 0.1;
 };
 
 void Init(App* app);

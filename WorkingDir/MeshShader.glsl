@@ -33,6 +33,7 @@ layout(location=2) in vec2 aTexCoord;
 layout(binding = 0, std140) uniform GlobalParams
 {
 	vec3 uCameraPosition;
+	float ambient;
 	uint uLightCount;
 	Light uLight[16];
 };
@@ -75,6 +76,7 @@ uniform sampler2D uTexture;
 layout(binding = 0, std140) uniform GlobalParams
 {
 	vec3 uCameraPosition;
+	float ambient;
 	uint uLightCount;
 	Light uLight[16];
 };
@@ -84,7 +86,6 @@ layout(location=0) out vec4 fragColor;
 vec3 DirectionalLight(in Light light, in vec3 texColor)
 {
 	vec3 ret = vec3(0);
-	float ambient = 0.1;
 	vec3 lightDir = normalize(light.direction);
 
 	float specular = 0.5;
@@ -109,7 +110,6 @@ vec3 PointLight(in Light light, in vec3 texColor)
     float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));  
 
 	vec3 ret = vec3(0);
-	float ambient = 0.1;
 	vec3 lightDir = normalize(light.position - vPosition);
 
 	float specular = 0.5;
@@ -131,7 +131,6 @@ vec3 SpotLight(in Light light, in vec3 texColor)
 	float theta = dot(lightDir, normalize(-light.direction));
 	float epsilon = light.cutoff - light.outerCutoff;
 	float softness = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
-	float ambient = 0.1;
 
 	if (theta < light.outerCutoff) return (ambient * light.color) * texColor;
 
@@ -154,11 +153,13 @@ void main()
 	vec4 tex = texture(uTexture, vTexCoord);
 	vec3 texColor = vec3(tex);
 	vec3 color = vec3(0);
+	bool anyLightActive = false;
 
 	for (uint i = 0; i < uLightCount; ++i)
 	{
 		if (uLight[i].active == 0) continue;
 		Light light = uLight[i];
+		anyLightActive = true;
 
 		switch(light.type)
 		{
@@ -167,6 +168,8 @@ void main()
 			case 3: color += SpotLight(light, texColor); break;
 		}
 	}
+
+	if (!anyLightActive) color += (ambient * vec3(1)) * texColor;
 
 	fragColor = vec4(color, 1.0);
 }

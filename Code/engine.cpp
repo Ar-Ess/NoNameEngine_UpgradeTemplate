@@ -196,17 +196,15 @@ void Init(App* app)
     //app->InitTexturedQuad("color_black.png", false);
     //app->InitTexturedQuad("color_normal.png", false);
     //app->InitTexturedQuad("color_magenta.png", false);
-    app->InitModel("Patrick/Patrick.obj", true);
-    Object* o = app->InitModel("Primitives/Plane/Plane.obj", true);
-    o->position.y = -4;
-    o->UpdateTransform();
+    app->InitModel("Patrick/Patrick.obj");
+    app->InitModel("Primitives/Plane/Plane.obj", glm::vec3(0, -4, 0));
 
     app->AddDirectLight(glm::vec3(1, 1, 1), glm::vec3(1, 1, 1));
-    app->AddPointLight(glm::vec3(1, 1, 1), glm::vec3(0, 0, 5));
-    app->AddSpotLight(glm::vec3(1, 1, 1), glm::vec3(0, 2, 10), glm::vec3(0, -0.3, -1), 15);
+    //app->AddPointLight(glm::vec3(1, 1, 1), glm::vec3(0, 0, 5));
+    //app->AddSpotLight(glm::vec3(1, 1, 1), glm::vec3(0, 2, 10), glm::vec3(0, -0.3, -1), 15);
 }
 
-void App::InitTexturedQuad(const char* texture, bool active)
+void App::InitTexturedQuad(const char* texture, glm::vec3 position)
 {
     const Vertex vertex[] = {
         Vertex(-0.5f, -0.5f, 0.0f, 0.0f, 0.0f),
@@ -221,7 +219,8 @@ void App::InitTexturedQuad(const char* texture, bool active)
     };
 
     TexturedQuad* quad = new TexturedQuad();
-    quad->active = active;
+    quad->position = position;
+    quad->UpdateTransform();
 
     // Generar buffer i et retorna id
     glGenBuffers(1, &quad->vertexs);
@@ -277,7 +276,7 @@ void App::InitTexturedQuad(const char* texture, bool active)
     quad->name = "Quad";
 }
 
-Object* App::InitModel(const char* path, bool active)
+Object* App::InitModel(const char* path, glm::vec3 position)
 {
     u32 program = LoadProgram(this, "MeshShader.glsl", "TEXTURED_GEOMETRY");
 
@@ -299,7 +298,8 @@ Object* App::InitModel(const char* path, bool active)
 
     Model* m = LoadModel(this, path);
     m->program = program;
-    m->active = active;
+    m->position = position;
+    m->UpdateTransform();
     m->texUniform = texUniform;
 
     for (std::vector<Mesh*>::iterator it = m->meshes.begin(); it != m->meshes.end(); ++it)
@@ -331,6 +331,37 @@ void App::AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction,
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Spot Light";
+}
+
+void App::DeleteObject(intptr_t selected)
+{
+    Object* o = nullptr;
+    unsigned int index = 0;
+    for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
+    {
+        o = (*it);
+        if (o->id == selected) break;
+        index++;
+    }
+
+    if (!o) return;
+
+    if (o->Type() == ObjectType::O_LIGHT)
+    {
+        Light* l = (Light*)o;
+        int lIndex = -1;
+        for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
+        {
+            lIndex++;
+            if ((*it)->id == l->id) break;
+        }
+
+        if (lIndex != -1) lights.erase(lights.begin() + lIndex);
+    }
+
+    objects.erase(objects.begin() + index);
+    delete o;
+
 }
 
 void Update(App* app)
@@ -387,7 +418,43 @@ void App::GUI()
         }
         if (ImGui::BeginMenu("Config"))
         {
-            ImGui::Checkbox("Show FPS", &showFps);
+            ImGui::Text("Show FPS:"); ImGui::SameLine();
+            ImGui::Checkbox("##sfps", &showFps);
+
+            ImGui::PushItemWidth(65);
+            ImGui::Text("Ambient:"); ImGui::SameLine();
+            ImGui::DragFloat("##amb", &ambient, 0.01, 0, 1, "%.2f");
+            ImGui::PopItemWidth();
+
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Create"))
+        {
+            if (ImGui::BeginMenu("Models"))
+            {
+                if (ImGui::MenuItem("Patrick"))
+                    InitModel("Patrick/Patrick.obj");
+
+                if (ImGui::MenuItem("Plane"))
+                    InitModel("Primitives/Plane/Plane.obj", glm::vec3(0, -4, 0));
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Lights"))
+            {
+                if (ImGui::MenuItem("Directional"))
+                    AddDirectLight(glm::vec3(1, 1, 1), glm::vec3(1, 1, 1));
+
+                if (ImGui::MenuItem("Point Light"))
+                    AddPointLight(glm::vec3(1, 1, 1), glm::vec3(0, 0, 5));
+
+                if (ImGui::MenuItem("Spot Light"))
+                    AddSpotLight(glm::vec3(1, 1, 1), glm::vec3(0, 2, 10), glm::vec3(0, -0.3, -1), 15);
+
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("About"))
@@ -420,9 +487,9 @@ void App::GUI()
             ImGui::PushID(o->id);
             ImGui::Checkbox("##active", &o->active);
             ImGui::SameLine();
-            if (ImGui::Selectable(o->name.c_str(), selected == o->id))
+            if (ImGui::Selectable(o->name.c_str(), selected == o->id, ImGuiSelectableFlags_AllowItemOverlap))
             {
-                if (selected == o->id)  selected = 0;
+                if (selected == o->id) selected = 0;
                 else selected = o->id;
             }
 
@@ -431,6 +498,9 @@ void App::GUI()
                 ImGui::PopID();
                 continue;
             }
+
+            ImGui::SameLine();
+            if (ImGui::Button("X")) DeleteObject(o->id);
 
             ImGui::Separator();
 
@@ -487,6 +557,7 @@ void Render(App* app)
     // -- Global Parameters
     app->globalParamsOffset = app->cbuffer.head;
     PushVec3(app->cbuffer, app->cam->Position());
+    PushFloat(app->cbuffer, app->ambient);
     PushUInt(app->cbuffer, app->lights.size());
 
     for (std::vector<Light*>::iterator it = app->lights.begin(); it != app->lights.end(); ++it)
