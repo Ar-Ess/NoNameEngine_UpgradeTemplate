@@ -46,6 +46,42 @@ public:
 		return false;
 	}
 
+protected:
+
+	bool DrawFloat(const char* title, float* value, float velocity, float min, float max, const char* format = "%.2f")
+	{
+		ImGui::PushItemWidth(70);
+		std::string id = "##";
+		id += title;
+		ImGui::BulletText(title);
+		ImGui::SameLine();
+		bool change = ImGui::DragFloat(id.c_str(), value, velocity, min, max, format);
+
+		ImGui::PopItemWidth();
+
+		return change;
+	}
+
+	bool Draw3Float(const char* title, glm::vec3* value, float velocity, float min, float max, const char* format1, const char* format2, const char* format3)
+	{
+		ImGui::PushItemWidth(50);
+		ImGui::BulletText(title);
+		std::string id = "##";
+		id += title;
+
+		bool change = false;
+
+		if (ImGui::DragFloat((id + "1").c_str(), &value->x, velocity, min, max, format1)) change = true;
+		ImGui::SameLine();
+		if (ImGui::DragFloat((id + "2").c_str(), &value->y, velocity, min, max, format2)) change = true;
+		ImGui::SameLine();
+		if (ImGui::DragFloat((id + "3").c_str(), &value->z, velocity, min, max, format3)) change = true;
+
+		ImGui::PopItemWidth();
+
+		return change;
+	}
+
 private:
 
 	glm::vec3 InternalPosition() const

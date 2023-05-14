@@ -201,8 +201,9 @@ void Init(App* app)
     o->position.y = -4;
     o->UpdateTransform();
 
-    app->AddDirectLight(glm::vec3(1, 1, 1), glm::vec3(1, 0, 0));
+    app->AddDirectLight(glm::vec3(1, 1, 1), glm::vec3(1, 1, 1));
     app->AddPointLight(glm::vec3(1, 1, 1), glm::vec3(0, 0, 5));
+    app->AddSpotLight(glm::vec3(1, 1, 1), glm::vec3(0, 2, 10), glm::vec3(0, -0.3, -1), 15);
 }
 
 void App::InitTexturedQuad(const char* texture, bool active)
@@ -310,7 +311,7 @@ Object* App::InitModel(const char* path, bool active)
 
 void App::AddPointLight(glm::vec3 color, glm::vec3 position)
 {
-    Light* l = new Light(LightType::LT_POINT, color, position, glm::vec3());
+    Light* l = new Light(LightType::LT_POINT, color, position, glm::vec3(), 0);
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Point Light";
@@ -318,10 +319,18 @@ void App::AddPointLight(glm::vec3 color, glm::vec3 position)
 
 void App::AddDirectLight(glm::vec3 color, glm::vec3 direction)
 {
-    Light* l = new Light(LightType::LT_DIRECTIONAL, color, glm::vec3(), direction);
+    Light* l = new Light(LightType::LT_DIRECTIONAL, color, glm::vec3(), direction, 0);
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Directional Light";
+}
+
+void App::AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff)
+{
+    Light* l = new Light(LightType::LT_SPOT, color, position, direction, cutoff);
+    lights.push_back(l);
+    objects.push_back(l);
+    l->name = "Spot Light";
 }
 
 void Update(App* app)
@@ -489,6 +498,9 @@ void Render(App* app)
         PushVec3(app->cbuffer, l->color);
         PushVec3(app->cbuffer, l->direction);
         PushVec3(app->cbuffer, l->position);
+        PushFloat(app->cbuffer, l->Cutoff());
+        PushFloat(app->cbuffer, l->OuterCuttoff());
+        PushFloat(app->cbuffer, l->intensity);
         PushUInt(app->cbuffer, l->active);
     }
 
@@ -512,7 +524,7 @@ void Render(App* app)
             PushVec3(app->cbuffer, m->material.ambient);
             PushVec3(app->cbuffer, m->material.diffuse);
             PushVec3(app->cbuffer, m->material.specular);
-            PushUInt(app->cbuffer, m->material.bright);
+            PushFloat(app->cbuffer, m->material.bright);
         }
 
         o->localParamsSize = app->cbuffer.head - o->localParamsOffset;

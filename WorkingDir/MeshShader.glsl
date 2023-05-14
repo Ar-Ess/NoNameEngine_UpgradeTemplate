@@ -9,6 +9,9 @@ struct Light
 	vec3 color;
 	vec3 direction;
 	vec3 position;
+	float cutoff;
+	float outerCutoff;
+	float intensity;
 	uint active;
 };
 
@@ -91,8 +94,8 @@ vec3 DirectionalLight(in Light light, in vec3 texColor)
 	float spec = pow(max(dot(vViewDir, reflectDir), 0.0), 32);
 
 	ret += ambient * light.color; 
-	ret += diffuse * light.color;
-	ret += specular * spec * light.color;
+	ret += diffuse * light.color * light.intensity;
+	ret += specular * spec * light.color * light.intensity;
 
 	return ret * texColor;
 }
@@ -102,7 +105,7 @@ vec3 PointLight(in Light light, in vec3 texColor)
 	float constant = 1;
 	float linear = 0.09;
 	float quadratic = 0.032;
-	float distance    = length(light.position - vPosition);
+	float distance  = length(light.position - vPosition);
     float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));  
 
 	vec3 ret = vec3(0);
@@ -116,8 +119,32 @@ vec3 PointLight(in Light light, in vec3 texColor)
 	float spec = pow(max(dot(vViewDir, reflectDir), 0.0), 32);
 
 	ret += ambient * light.color * attenuation; 
-	ret += diffuse * light.color  * attenuation;
-	ret += specular * spec * light.color  * attenuation;
+	ret += diffuse * light.color  * attenuation * light.intensity;
+	ret += specular * spec * light.color  * attenuation* light.intensity;
+
+	return ret * texColor;
+}
+
+vec3 SpotLight(in Light light, in vec3 texColor)
+{
+	vec3 lightDir = normalize(light.position - vPosition);
+	float theta = dot(lightDir, normalize(-light.direction));
+	float epsilon = light.cutoff - light.outerCutoff;
+	float softness = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
+	float ambient = 0.1;
+
+	if (theta < light.outerCutoff) return (ambient * light.color) * texColor;
+
+	vec3 ret = vec3(0);
+	float specular = 0.5;
+	vec3 reflectDir = reflect(-lightDir, vNormal);
+
+	float diffuse = max(dot(vNormal, lightDir), 0.0);
+	float spec = pow(max(dot(vViewDir, reflectDir), 0.0), 32);
+
+	ret += ambient * light.color; 
+	ret += diffuse * light.color * softness * light.intensity;
+	ret += specular * spec * light.color * softness * light.intensity;
 
 	return ret * texColor;
 }
@@ -137,6 +164,7 @@ void main()
 		{
 			case 1: color += DirectionalLight(light, texColor); break;
 			case 2: color += PointLight(light, texColor); break;
+			case 3: color += SpotLight(light, texColor); break;
 		}
 	}
 
