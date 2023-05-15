@@ -12,15 +12,14 @@ struct Light
 	float cutoff;
 	float outerCutoff;
 	float intensity;
-	uint active;
+	uint isActive;
 };
 
 struct Material
 {
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
-	float bright;
+	float diffuse;
+	float specular;
+	float shininess;
 };
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
@@ -42,19 +41,16 @@ layout(binding = 1, std140) uniform LocalParams
 {
 	mat4 uWorldMatrix;
 	mat4 uGlobalMatrix;
-	Material material;
 };
 
 out vec2 vTexCoord;
 out vec3 vPosition;
 out vec3 vNormal;
 out vec3 vViewDir;
-out Material vMaterial;
 
 void main()
 {
 	vTexCoord   = aTexCoord;
-	vMaterial   = material;
 	vPosition   = vec3( uWorldMatrix * vec4(aPosition, 1.0) );
 	vNormal     = normalize(vec3( uWorldMatrix * vec4(aNormal, 0.0) ));
 	vViewDir    = normalize(uCameraPosition - vPosition);
@@ -67,11 +63,13 @@ in vec2 vTexCoord;
 in vec3 vPosition;
 in vec3 vNormal;
 in vec3 vViewDir;
-in Material vMaterial;
 
 // getting the id of the texture using -> glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 // sending the texture data glUniform1i(app->programUniformTexture, 0);
 uniform sampler2D uTexture;
+
+uniform Material uMaterial;
+
 
 layout(binding = 0, std140) uniform GlobalParams
 {
@@ -157,7 +155,7 @@ void main()
 
 	for (uint i = 0; i < uLightCount; ++i)
 	{
-		if (uLight[i].active == 0) continue;
+		if (uLight[i].isActive == 0) continue;
 		Light light = uLight[i];
 		anyLightActive = true;
 

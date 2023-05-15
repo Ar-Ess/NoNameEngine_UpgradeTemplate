@@ -25,23 +25,31 @@ struct Light : public Object
 
 		switch (type)
 		{
-		case LightType::LT_POINT: 
-			change = Draw3Float("Position:", &position, 0.1, 0, 0, "X: %.2f", "Y: %.2f", "Z: %.2f");
+		case LightType::LT_POINT:
+			if (ImGui::CollapsingHeader("Transform"))
+				change = Draw3Float("Position:", &position, 0.1, 0, 0, "X: %.2f", "Y: %.2f", "Z: %.2f");
 			break;
 
 		case LightType::LT_DIRECTIONAL:
-			Draw3Float("Direction:", &direction, 0.01, -1, 1, "X: %.2f", "Y: %.2f", "Z: %.2f");
+			if (ImGui::CollapsingHeader("Transform"))
+				Draw3Float("Direction:", &direction, 0.01, -1, 1, "X: %.2f", "Y: %.2f", "Z: %.2f");
 			break;
 
 		case LightType::LT_SPOT:
 			DrawFloat("Cutoff:   ", &cutoff, 0.1, 0, 360);
 			DrawFloat("Softness: ", &softness, 0.1, 0, 360);
-			change = Draw3Float("Position:", &position, 0.1, 0, 0, "X: %.2f", "Y: %.2f", "Z: %.2f");
-			Draw3Float("Direction:", &direction, 0.01, -1, 1, "X: %.2f", "Y: %.2f", "Z: %.2f");
+			if (ImGui::CollapsingHeader("Transform"))
+			{
+				change = Draw3Float("Position:", &position, 0.1, 0, 0, "X: %.2f", "Y: %.2f", "Z: %.2f");
+				Draw3Float("Direction:", &direction, 0.01, -1, 1, "X: %.2f", "Y: %.2f", "Z: %.2f");
+			}
 			break;
 		}
 
-		Draw3Float("Color:", &color, 0.01, 0, 1, "R: %.2f", "G: %.2f", "B: %.2f");
+		if (ImGui::CollapsingHeader("Material"))
+		{
+			Draw3Float("Color:", &color, 0.01, 0, 1, "R: %.2f", "G: %.2f", "B: %.2f");
+		}
 
 		return change;
 	}

@@ -152,7 +152,7 @@
     <ClInclude Include="Code\Buffer.h">
       <Filter>Engine\Internal</Filter>
     </ClInclude>
-    <ClInclude Include="Code\ShaderMaterial.h">
+    <ClInclude Include="Code\Flag.h">
       <Filter>Engine\Internal</Filter>
     </ClInclude>
   </ItemGroup>

@@ -65,7 +65,7 @@ struct App
     std::vector<Material*> materials;
 
     void InitTexturedQuad(const char* texture, glm::vec3 position = glm::vec3(0.f));
-    Object* InitModel(const char* path, glm::vec3 position = glm::vec3(0.f));
+    void InitModel(const char* path, glm::vec3 position = glm::vec3(0.f));
     void AddPointLight(glm::vec3 color, glm::vec3 position);
     void AddDirectLight(glm::vec3 color, glm::vec3 direction);
     void AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff);

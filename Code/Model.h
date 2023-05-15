@@ -4,7 +4,6 @@
 #include "VertexBufferLayout.h"
 #include <vector>
 #include "Program.h"
-#include "ShaderMaterial.h"
 
 class Model : public Object
 {
@@ -20,26 +19,14 @@ public:
 
 		ImGui::PushItemWidth(50);
 
-		ImGui::BulletText("Position:");
-		if (ImGui::DragFloat("##1x", &position.x, 0.1, 0, 0, "X: %.2f")) change = true;
-		ImGui::SameLine();
-		if (ImGui::DragFloat("##1y", &position.y, 0.1, 0, 0, "Y: %.2f")) change = true;
-		ImGui::SameLine();
-		if (ImGui::DragFloat("##1z", &position.z, 0.1, 0, 0, "Z: %.2f")) change = true;
+		if (ImGui::CollapsingHeader("Transform"))
+		{
+			if (Draw3Float("Position:", &position, 0.1, 0, 0, "X: %.2f", "Y: %.2f", "Z: %.2f")) change = true;
 
-		ImGui::BulletText("Rotation:");
-		if (ImGui::DragFloat("##2x", &rotation.x, 0.1, 0, 0, "X: %.2f")) change = true;
-		ImGui::SameLine();
-		if (ImGui::DragFloat("##2y", &rotation.y, 0.1, 0, 0, "Y: %.2f")) change = true;
-		ImGui::SameLine();
-		if (ImGui::DragFloat("##2z", &rotation.z, 0.1, 0, 0, "Z: %.2f")) change = true;
+			if (Draw3Float("Rotation:", &rotation, 0.1, 0, 0, "X: %.2f", "Y: %.2f", "Z: %.2f")) change = true;
 
-		ImGui::BulletText("Scale:");
-		if (ImGui::DragFloat("##3x", &scale.x, 0.1, 0, 0, "X: %.2f")) change = true;
-		ImGui::SameLine();
-		if (ImGui::DragFloat("##3y", &scale.y, 0.1, 0, 0, "Y: %.2f")) change = true;
-		ImGui::SameLine();
-		if (ImGui::DragFloat("##3z", &scale.z, 0.1, 0, 0, "Z: %.2f")) change = true;
+			if (Draw3Float("Scale:", &scale, 0.1, 0, 0, "X: %.2f", "Y: %.2f", "Z: %.2f")) change = true;
+		}
 
 		ImGui::PopItemWidth();
 
@@ -105,7 +92,6 @@ public:
 
 public:
 
-	ShaderMaterial material;
 	std::vector<Mesh*> meshes;
 	std::vector<unsigned int> materials;
 

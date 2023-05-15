@@ -37,6 +37,7 @@
     <ClInclude Include="Code\BufferManagement.h" />
     <ClInclude Include="Code\Camera.h" />
     <ClInclude Include="Code\engine.h" />
+    <ClInclude Include="Code\Flag.h" />
     <ClInclude Include="Code\Image.h" />
     <ClInclude Include="Code\Light.h" />
     <ClInclude Include="Code\Material.h" />
@@ -45,7 +46,6 @@
     <ClInclude Include="Code\Object.h" />
     <ClInclude Include="Code\platform.h" />
     <ClInclude Include="Code\Program.h" />
-    <ClInclude Include="Code\ShaderMaterial.h" />
     <ClInclude Include="Code\Texture.h" />
     <ClInclude Include="Code\TexturedQuad.h" />
     <ClInclude Include="Code\Typedef.h" />

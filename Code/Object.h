@@ -110,6 +110,7 @@ public:
 	GLuint indexs = 0;
 	GLuint texUniform = 0;
 	GLuint program = 0;
+	GLuint programHandle = 0;
 	bool active = true;
 
 protected:

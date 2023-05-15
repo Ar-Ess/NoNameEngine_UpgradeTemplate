@@ -187,6 +187,7 @@ void Init(App* app)
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     app->cbuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
@@ -267,6 +268,7 @@ void App::InitTexturedQuad(const char* texture, glm::vec3 position)
     quad->program = quad->vao.program = LoadProgram(this, "TextureShader.glsl", "TEXTURED_GEOMETRY");
     
     Program& texturedGeometryProgram = *programs[quad->vao.program];
+    quad->programHandle = texturedGeometryProgram.handle;
     quad->texUniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 
     quad->texture = LoadTexture2D(this, texture);
@@ -276,7 +278,7 @@ void App::InitTexturedQuad(const char* texture, glm::vec3 position)
     quad->name = "Quad";
 }
 
-Object* App::InitModel(const char* path, glm::vec3 position)
+void App::InitModel(const char* path, glm::vec3 position)
 {
     u32 program = LoadProgram(this, "MeshShader.glsl", "TEXTURED_GEOMETRY");
 
@@ -298,6 +300,7 @@ Object* App::InitModel(const char* path, glm::vec3 position)
 
     Model* m = LoadModel(this, path);
     m->program = program;
+    m->programHandle = p->handle;
     m->position = position;
     m->UpdateTransform();
     m->texUniform = texUniform;
@@ -306,7 +309,6 @@ Object* App::InitModel(const char* path, glm::vec3 position)
         for (std::vector<Vao>::iterator ot = (*it)->vaos.begin(); ot != (*it)->vaos.end(); ++ot)
             (*ot).program = m->program;
 
-    return m;
 }
 
 void App::AddPointLight(glm::vec3 color, glm::vec3 position)
@@ -589,14 +591,6 @@ void Render(App* app)
         o->localParamsOffset = app->cbuffer.head;
         PushMat4(app->cbuffer, o->world);
         PushMat4(app->cbuffer, app->GlobalMatrix(o->world));
-        if (o->Type() == ObjectType::O_MODEL)
-        {
-            Model* m = (Model*)o;
-            PushVec3(app->cbuffer, m->material.ambient);
-            PushVec3(app->cbuffer, m->material.diffuse);
-            PushVec3(app->cbuffer, m->material.specular);
-            PushFloat(app->cbuffer, m->material.bright);
-        }
 
         o->localParamsSize = app->cbuffer.head - o->localParamsOffset;
         localParamsFullSize += o->localParamsSize;
@@ -660,7 +654,7 @@ void Render(App* app)
                 Material* mat = app->materials[m->materials[i]];
 
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, app->textures[mat->albedoTex]->handle);
+                glBindTexture(GL_TEXTURE_2D, app->textures[mat->diffuseTex]->handle);
                 glUniform1i(m->texUniform, 0);
 
                 Mesh* mesh = m->meshes[i];

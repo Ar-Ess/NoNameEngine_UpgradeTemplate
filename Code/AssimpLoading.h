@@ -100,9 +100,9 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material* myMaterial,
     material->Get(AI_MATKEY_SHININESS, shininess);
 
     myMaterial->name = name.C_Str();
-    myMaterial->albedo = vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b);
+    myMaterial->diffuse = vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b);
     myMaterial->emissive = vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b);
-    myMaterial->smoothness = shininess / 256.0f;
+    myMaterial->shininess = shininess / 256.0f;
 
     aiString aiFilename;
     if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
@@ -110,14 +110,8 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material* myMaterial,
         material->GetTexture(aiTextureType_DIFFUSE, 0, &aiFilename);
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
-        myMaterial->albedoTex = LoadTexture2D(app, filepath.str);
-    }
-    if (material->GetTextureCount(aiTextureType_EMISSIVE) > 0)
-    {
-        material->GetTexture(aiTextureType_EMISSIVE, 0, &aiFilename);
-        String filename = MakeString(aiFilename.C_Str());
-        String filepath = MakePath(directory, filename);
-        myMaterial->emissiveTex = LoadTexture2D(app, filepath.str);
+        myMaterial->diffuseTex = LoadTexture2D(app, filepath.str);
+        myMaterial->properties.Set(aiTextureType_DIFFUSE, true);
     }
     if (material->GetTextureCount(aiTextureType_SPECULAR) > 0)
     {
@@ -125,6 +119,16 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material* myMaterial,
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
         myMaterial->specularTex = LoadTexture2D(app, filepath.str);
+        myMaterial->properties.Set(aiTextureType_EMISSIVE, true);
+
+    }
+    if (material->GetTextureCount(aiTextureType_EMISSIVE) > 0)
+    {
+        material->GetTexture(aiTextureType_EMISSIVE, 0, &aiFilename);
+        String filename = MakeString(aiFilename.C_Str());
+        String filepath = MakePath(directory, filename);
+        myMaterial->emissiveTex = LoadTexture2D(app, filepath.str);
+        myMaterial->properties.Set(aiTextureType_EMISSIVE, true);
     }
     if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
     {
@@ -132,6 +136,7 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material* myMaterial,
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
         myMaterial->normalsTex = LoadTexture2D(app, filepath.str);
+        myMaterial->properties.Set(aiTextureType_NORMALS, true);
     }
     if (material->GetTextureCount(aiTextureType_HEIGHT) > 0)
     {
@@ -139,6 +144,7 @@ void ProcessAssimpMaterial(App* app, aiMaterial* material, Material* myMaterial,
         String filename = MakeString(aiFilename.C_Str());
         String filepath = MakePath(directory, filename);
         myMaterial->bumpTex = LoadTexture2D(app, filepath.str);
+        myMaterial->properties.Set(aiTextureType_HEIGHT, true);
     }
 
     //myMaterial.createNormalFromBump();
