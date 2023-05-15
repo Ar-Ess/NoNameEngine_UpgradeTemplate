@@ -41,6 +41,13 @@ struct OpenGLInfo
     std::vector<const char*> extensions;
 };
 
+struct FrameBuffer
+{
+    GLuint colorAttachHandle = 0;
+    GLuint depthAttachHandle = 0;
+    GLuint frameBufferHandle = 0;
+};
+
 struct App
 {
     // Loop
@@ -87,6 +94,8 @@ struct App
     }
 
     GLuint uniformBufferHandle = 0;
+    FrameBuffer frameBuffer;
+
     intptr_t selected = 0;
 
     std::vector<Light*> lights;

@@ -192,17 +192,15 @@ void Init(App* app)
 
     app->cbuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
 
-    //app->InitTexturedQuad("dice.png", true);
-    //app->InitTexturedQuad("color_white.png", false);
-    //app->InitTexturedQuad("color_black.png", false);
-    //app->InitTexturedQuad("color_normal.png", false);
-    //app->InitTexturedQuad("color_magenta.png", false);
+    app->frameBuffer.colorAttachHandle = CreateFrameBufferAttachement(GL_RGBA, app->displaySize);
+    app->frameBuffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, app->displaySize);
+    app->frameBuffer.depthAttachHandle = CreateFrameBuffer();
+
+
     app->InitModel("Patrick/Patrick.obj");
     app->InitModel("Primitives/Plane/Plane.obj", glm::vec3(0, -4, 0));
 
     app->AddDirectLight(glm::vec3(1, 1, 1), glm::vec3(1, 1, 1));
-    //app->AddPointLight(glm::vec3(1, 1, 1), glm::vec3(0, 0, 5));
-    //app->AddSpotLight(glm::vec3(1, 1, 1), glm::vec3(0, 2, 10), glm::vec3(0, -0.3, -1), 15);
 }
 
 void App::InitTexturedQuad(const char* texture, glm::vec3 position)

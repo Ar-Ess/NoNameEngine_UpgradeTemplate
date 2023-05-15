@@ -72,6 +72,55 @@ void PushAlignedData(Buffer& buffer, const void* data, u32 size, u32 alignment)
     buffer.head += size;
 }
 
+GLuint CreateFrameBufferAttachement(GLuint format, ivec2 display)
+{
+    if (format != GL_RGBA || format != GL_DEPTH_COMPONENT) assert(false, "Function CreateFrameBufferAttachement(): ATTACHEMENT FORMAT NOT YET IMPLEMENTED");
+
+    GLuint handle = 0;
+    GLuint internalFormat = format == GL_RGBA ? GL_RGBA8 : GL_DEPTH_COMPONENT24;
+    GLuint type = format == GL_RGBA ? GL_UNSIGNED_BYTE : GL_FLOAT;
+
+    glGenTextures(1, &handle);
+    glBindTexture(GL_TEXTURE_2D, handle);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, display.x, display.y, 0, format, type, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    return handle;
+}
+
+GLuint InitFrameBuffer(FrameBuffer& buffer)
+{
+    glGenFramebuffers(1, &buffer.handle);
+    glBindFramebuffer(GL_FRAMEBUFFER, buffer.handle);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer.colorAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer.depthAttachHandle, 0);
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE)
+    {
+        switch (status)
+        {
+        case GL_FRAMEBUFFER_UNDEFINED:                     ELOG("GL_FRAMEBUFFER_UNDEFINEd                    "); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT        "); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER       "); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER       "); break;
+        case GL_FRAMEBUFFER_UNSUPPORTED:                   ELOG("GL_FRAMEBUFFER_UNSUPPORTED                  "); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE       "); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:      ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS     "); break;
+        default: ELOG("Unknoen framebuffer status error"); break;
+        }
+    }
+
+    glDrawBuffers(1, &buffer.colorAttachHandle);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 #define PushData(buffer, data, size) PushAlignedData(buffer, data, size, 1)
 #define PushUInt(buffer, value) { u32 v = value; PushAlignedData(buffer, &v, sizeof(v), 4); }
 #define PushFloat(buffer, value) { float v = value; PushAlignedData(buffer, &v, sizeof(v), 4); }
