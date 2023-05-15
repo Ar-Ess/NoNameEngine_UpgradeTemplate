@@ -192,10 +192,7 @@ void Init(App* app)
 
     app->cbuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
 
-    app->frameBuffer.colorAttachHandle = CreateFrameBufferAttachement(GL_RGBA, app->displaySize);
-    app->frameBuffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, app->displaySize);
-    app->frameBuffer.depthAttachHandle = CreateFrameBuffer();
-
+    app->frameBuffer = CreateFrameBuffer(app->displaySize);
 
     app->InitModel("Patrick/Patrick.obj");
     app->InitModel("Primitives/Plane/Plane.obj", glm::vec3(0, -4, 0));

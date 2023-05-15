@@ -43,9 +43,10 @@ struct OpenGLInfo
 
 struct FrameBuffer
 {
+
     GLuint colorAttachHandle = 0;
     GLuint depthAttachHandle = 0;
-    GLuint frameBufferHandle = 0;
+    GLuint handle = 0;
 };
 
 struct App
