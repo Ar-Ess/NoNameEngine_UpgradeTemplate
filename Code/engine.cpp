@@ -415,11 +415,14 @@ void App::GUI()
         }
         if (ImGui::BeginMenu("Config"))
         {
+            ImGui::Text("Deferred:"); ImGui::SameLine();
+            ImGui::Checkbox("##defr", &deferred);
+
             ImGui::Text("Show FPS:"); ImGui::SameLine();
             ImGui::Checkbox("##sfps", &showFps);
 
             ImGui::PushItemWidth(65);
-            ImGui::Text("Ambient:"); ImGui::SameLine();
+            ImGui::Text("Ambient: "); ImGui::SameLine();
             ImGui::DragFloat("##amb", &ambient, 0.01, 0, 1, "%.2f");
             ImGui::PopItemWidth();
 
@@ -524,14 +527,14 @@ void App::Input()
 {
     if (!input.Active()) return;
 
-    if (input.GetKey(K_A)) 
+    if (input.GetKey(K_A))
         cam->Translate(-0.1, 0, 0);
 
     if (input.GetKey(K_D))
-        cam->Translate( 0.1, 0, 0);
+        cam->Translate(0.1, 0, 0);
 
     if (input.GetKey(K_W))
-        cam->Translate(0, 0,  0.1);
+        cam->Translate(0, 0, 0.1);
 
     if (input.GetKey(K_S))
         cam->Translate(0, 0, -0.1);
@@ -543,62 +546,70 @@ void App::Input()
 
 void Render(App* app)
 {
-    glClearColor(0.1f, 0.1f, 0.1, 1.0f); // Asignar el color base
+    // Intentar posar aquí el glClear
+
+   if (!app->deferred) app->RenderForward();
+   else app->RenderDeferred();
+}
+
+void App::RenderForward()
+{
+    glClearColor(0, 0, 0, 1.f); // Asignar el color base
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Borrar color & depth buffer
-    glViewport(0, 0, app->displaySize.x, app->displaySize.y); // Defineix viewport on renderitzar
+    glViewport(0, 0, displaySize.x, displaySize.y); // Defineix viewport on renderitzar
 
     // Fill Uniform Buffer once per update
-    BindBuffer(app->cbuffer);
-    MapBuffer(app->cbuffer, GL_WRITE_ONLY);
+    BindBuffer(cbuffer);
+    MapBuffer(cbuffer, GL_WRITE_ONLY);
 
     // -- Global Parameters
-    app->globalParamsOffset = app->cbuffer.head;
-    PushVec3(app->cbuffer, app->cam->Position());
-    PushFloat(app->cbuffer, app->ambient);
-    PushUInt(app->cbuffer, app->lights.size());
+    globalParamsOffset = cbuffer.head;
+    PushVec3(cbuffer, cam->Position());
+    PushFloat(cbuffer, ambient);
+    PushUInt(cbuffer, lights.size());
 
-    for (std::vector<Light*>::iterator it = app->lights.begin(); it != app->lights.end(); ++it)
+    for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
     {
-        AlignHead(app->cbuffer, sizeof(glm::vec4));
+        AlignHead(cbuffer, sizeof(glm::vec4));
 
         Light* l = (*it);
-        PushUInt(app->cbuffer, (int)l->type);
-        PushVec3(app->cbuffer, l->color);
-        PushVec3(app->cbuffer, l->direction);
-        PushVec3(app->cbuffer, l->position);
-        PushFloat(app->cbuffer, l->Cutoff());
-        PushFloat(app->cbuffer, l->OuterCuttoff());
-        PushFloat(app->cbuffer, l->intensity);
-        PushUInt(app->cbuffer, l->active);
+        PushUInt(cbuffer, (int)l->type);
+        PushVec3(cbuffer, l->color);
+        PushVec3(cbuffer, l->direction);
+        PushVec3(cbuffer, l->position);
+        PushFloat(cbuffer, l->Cutoff());
+        PushFloat(cbuffer, l->OuterCuttoff());
+        PushFloat(cbuffer, l->intensity);
+        PushUInt(cbuffer, l->active);
     }
 
-    app->globalParamsSize = app->cbuffer.head - app->globalParamsOffset;
+    globalParamsSize = cbuffer.head - globalParamsOffset;
 
     // -- Local Parameters
     u32 localParamsFullSize = 0;
-    for (std::vector<Object*>::iterator it = app->objects.begin(); it != app->objects.end(); ++it)
+    for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
     {
         Object* o = (*it);
         if (o->Type() == ObjectType::O_LIGHT) continue;
 
-        AlignHead(app->cbuffer, app->GetUniformBlockAlignment());
-        
-        o->localParamsOffset = app->cbuffer.head;
-        PushMat4(app->cbuffer, o->world);
-        PushMat4(app->cbuffer, app->GlobalMatrix(o->world));
+        AlignHead(cbuffer, GetUniformBlockAlignment());
 
-        o->localParamsSize = app->cbuffer.head - o->localParamsOffset;
+        o->localParamsOffset = cbuffer.head;
+        PushMat4(cbuffer, o->world);
+        PushMat4(cbuffer, GlobalMatrix(o->world));
+
+        o->localParamsSize = cbuffer.head - o->localParamsOffset;
         localParamsFullSize += o->localParamsSize;
     }
 
-    UnmapBuffer(app->cbuffer);
-    UnbindBuffer(app->cbuffer);
+    UnmapBuffer(cbuffer);
+    UnbindBuffer(cbuffer);
 
-    BindBufferRange(app->cbuffer, BINDING(0), 0, app->globalParamsSize); // Binding Global Params
+    BindBufferRange(cbuffer, BINDING(0), 0, globalParamsSize); // Binding Global Params
 
     ///////////////////
 
-    for (std::vector<Object*>::iterator it = app->objects.begin(); it != app->objects.end(); ++it)
+    for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
     {
         Object* o = (*it);
         if (!o->active) continue;
@@ -609,7 +620,7 @@ void Render(App* app)
         {
             TexturedQuad* tQ = (TexturedQuad*)o;
             // Get & Set the program to be used
-            glUseProgram(app->programs[tQ->vao.program]->handle);
+            glUseProgram(programs[tQ->vao.program]->handle);
             // Bind the vao vertex array
             glBindVertexArray(tQ->vao.handle);
 
@@ -619,7 +630,7 @@ void Render(App* app)
             glActiveTexture(GL_TEXTURE0);
 
             // Bind the texture of the dice
-            glBindTexture(GL_TEXTURE_2D, app->textures[tQ->texture]->handle);
+            glBindTexture(GL_TEXTURE_2D, textures[tQ->texture]->handle);
 
             // Draw the elements to the screen
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
@@ -636,20 +647,20 @@ void Render(App* app)
         {
             Model* m = (Model*)o;
 
-            BindBufferRange(app->cbuffer, BINDING(1), o->localParamsOffset, o->localParamsSize); // Binding Local Params
+            BindBufferRange(cbuffer, BINDING(1), o->localParamsOffset, o->localParamsSize); // Binding Local Params
 
-            glUseProgram(app->programs[m->program]->handle);
+            glUseProgram(programs[m->program]->handle);
 
             unsigned int size = m->meshes.size();
             for (u32 i = 0; i < size; ++i)
             {
-                GLuint vao = m->FindVAO(i, app->programs[m->program]);
+                GLuint vao = m->FindVAO(i, programs[m->program]);
                 glBindVertexArray(vao);
 
-                Material* mat = app->materials[m->materials[i]];
+                Material* mat = materials[m->materials[i]];
 
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, app->textures[mat->diffuseTex]->handle);
+                glBindTexture(GL_TEXTURE_2D, textures[mat->diffuseTex]->handle);
                 glUniform1i(m->texUniform, 0);
 
                 Mesh* mesh = m->meshes[i];
@@ -666,6 +677,21 @@ void Render(App* app)
         default: break;
         }
     }
+}
+
+void App::RenderDeferred()
+{
+    // Bind the buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer.handle);
+
+    // Select which render targets
+    GLuint drawBuffers[] = { frameBuffer.colorAttachHandle };
+    glDrawBuffers(ARRAY_COUNT(drawBuffers), drawBuffers);
+
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer.handle);
 }
 
 void App::HotReload()

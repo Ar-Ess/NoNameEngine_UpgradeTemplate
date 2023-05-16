@@ -62,6 +62,10 @@ struct App
     // Gui
     void GUI();
 
+    // Render
+    void RenderForward();
+    void RenderDeferred();
+
     // Graphics
     OpenGLInfo openGLInformation;
 
@@ -113,6 +117,7 @@ struct App
     u32 globalParamsSize = 0;
     Buffer cbuffer;
     float ambient = 0.1;
+    bool deferred = false;
 };
 
 void Init(App* app);

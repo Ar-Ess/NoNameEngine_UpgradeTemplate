@@ -72,19 +72,11 @@ void PushAlignedData(Buffer& buffer, const void* data, u32 size, u32 alignment)
     buffer.head += size;
 }
 
-FrameBuffer CreateFrameBuffer(ivec2 display)
-{
-    FrameBuffer buffer;
-    buffer.colorAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
-    buffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display);
-    InitFrameBuffer(buffer);
-
-    return buffer;
-}
-
 GLuint CreateFrameBufferAttachement(GLuint format, ivec2 display)
 {
-    if (format != GL_RGBA || format != GL_DEPTH_COMPONENT) assert(false, "Function CreateFrameBufferAttachement(): ATTACHEMENT FORMAT NOT YET IMPLEMENTED");
+    GLuint glRGBA = GL_RGBA;
+    GLuint glDepthComponent = GL_DEPTH_COMPONENT;
+    assert((glRGBA == format || glDepthComponent == format) && "Function CreateFrameBufferAttachement(): ATTACHEMENT FORMAT NOT YET IMPLEMENTED");
 
     GLuint handle = 0;
     GLuint internalFormat = format == GL_RGBA ? GL_RGBA8 : GL_DEPTH_COMPONENT24;
@@ -132,6 +124,16 @@ void InitFrameBuffer(FrameBuffer& buffer)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     buffer.handle = handle;
+}
+
+FrameBuffer CreateFrameBuffer(ivec2 display)
+{
+    FrameBuffer buffer;
+    buffer.colorAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
+    buffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display);
+    InitFrameBuffer(buffer);
+
+    return buffer;
 }
 
 #define PushData(buffer, data, size) PushAlignedData(buffer, data, size, 1)
