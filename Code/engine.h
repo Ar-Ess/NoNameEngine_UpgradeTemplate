@@ -44,7 +44,6 @@ struct OpenGLInfo
 
 struct FrameBuffer
 {
-
     GLuint albedoAttachHandle = 0;
     GLuint specularAttachHandle = 0;
     GLuint normalsAttachHandle = 0;
@@ -124,9 +123,30 @@ struct App
     u32 globalParamsSize = 0;
     Buffer cbuffer;
     float ambient = 0.1;
-    bool deferred = true;
+    bool deferred = false;
 
     TexturedQuad* screenQuad = nullptr;
+
+    // Mode Combo
+    int currentMode = 0;
+    const char* modes[5] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO"};
+
+    GLuint CurrentMode()
+    {
+        GLuint ret;
+
+        switch (currentMode)
+        {
+            default: ret = frameBuffer.finalAttachHandle; break;
+            case 1: ret = frameBuffer.specularAttachHandle; break;
+            case 2: ret = frameBuffer.normalsAttachHandle; break;
+            case 3: ret = frameBuffer.positionAttachHandle; break;
+            case 4: ret = frameBuffer.albedoAttachHandle; break;
+        }
+
+        return ret;
+    }
+
 };
 
 void Init(App* app);

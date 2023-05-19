@@ -435,6 +435,9 @@ void App::GUI()
             ImGui::DragFloat("##amb", &ambient, 0.01, 0, 1, "%.2f");
             ImGui::PopItemWidth();
 
+            ImGui::Text("Mode:"); ImGui::SameLine();
+            ImGui::Combo("##mode", &currentMode, modes, 5);
+
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Create"))
@@ -562,133 +565,6 @@ void Render(App* app)
 }
 
 void App::RenderForward()
-{
-    glClearColor(0, 0, 0, 1.f); // Asignar el color base
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Borrar color & depth buffer
-    glViewport(0, 0, displaySize.x, displaySize.y); // Defineix viewport on renderitzar
-
-    // Fill Uniform Buffer once per update
-    BindBuffer(cbuffer);
-    MapBuffer(cbuffer, GL_WRITE_ONLY);
-
-    // -- Global Parameters
-    globalParamsOffset = cbuffer.head;
-    PushVec3(cbuffer, cam->Position());
-    PushFloat(cbuffer, ambient);
-    PushUInt(cbuffer, lights.size());
-
-    for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
-    {
-        AlignHead(cbuffer, sizeof(glm::vec4));
-
-        Light* l = (*it);
-        PushUInt(cbuffer, (int)l->type);
-        PushVec3(cbuffer, l->color);
-        PushVec3(cbuffer, l->direction);
-        PushVec3(cbuffer, l->position);
-        PushFloat(cbuffer, l->Cutoff());
-        PushFloat(cbuffer, l->OuterCuttoff());
-        PushFloat(cbuffer, l->intensity);
-        PushUInt(cbuffer, l->active);
-    }
-
-    globalParamsSize = cbuffer.head - globalParamsOffset;
-
-    // -- Local Parameters
-    u32 localParamsFullSize = 0;
-    for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
-    {
-        Object* o = (*it);
-        if (o->Type() == ObjectType::O_LIGHT) continue;
-
-        AlignHead(cbuffer, GetUniformBlockAlignment());
-
-        o->localParamsOffset = cbuffer.head;
-        PushMat4(cbuffer, o->world);
-        PushMat4(cbuffer, GlobalMatrix(o->world));
-
-        o->localParamsSize = cbuffer.head - o->localParamsOffset;
-        localParamsFullSize += o->localParamsSize;
-    }
-
-    UnmapBuffer(cbuffer);
-    UnbindBuffer(cbuffer);
-
-    BindBufferRange(cbuffer, BINDING(0), 0, globalParamsSize); // Binding Global Params
-
-    ///////////////////
-
-    for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
-    {
-        Object* o = (*it);
-        if (!o->active) continue;
-
-        switch (o->Type())
-        {
-        case ObjectType::O_TEXTURED_QUAD:
-        {
-            TexturedQuad* tQ = (TexturedQuad*)o;
-            // Get & Set the program to be used
-            glUseProgram(programs[tQ->vao.program]->handle);
-            // Bind the vao vertex array
-            glBindVertexArray(tQ->vao.handle);
-
-            // Send the texture as uniform variable to glsl script
-            glUniform1i(o->texUniform, 0);
-            // Activate slot for a texture
-            glActiveTexture(GL_TEXTURE0);
-
-            // Bind the texture of the dice
-            glBindTexture(GL_TEXTURE_2D, textures[tQ->texture]->handle);
-
-            // Draw the elements to the screen
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-            // Unbind the vertex array
-            glBindVertexArray(0);
-            // Unuse the program used
-            glUseProgram(0);
-
-            break;
-        }
-
-        case ObjectType::O_MODEL:
-        {
-            Model* m = (Model*)o;
-
-            BindBufferRange(cbuffer, BINDING(1), o->localParamsOffset, o->localParamsSize); // Binding Local Params
-
-            glUseProgram(programs[m->program]->handle);
-
-            unsigned int size = m->meshes.size();
-            for (u32 i = 0; i < size; ++i)
-            {
-                GLuint vao = m->FindVAO(i, programs[m->program]);
-                glBindVertexArray(vao);
-
-                Material* mat = materials[m->materials[i]];
-
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, textures[mat->diffuseTex]->handle);
-                glUniform1i(m->texUniform, 0);
-
-                Mesh* mesh = m->meshes[i];
-                glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
-
-                glBindVertexArray(0);
-            }
-
-            glUseProgram(0);
-
-            break;
-        }
-
-        default: break;
-        }
-    }
-}
-
-void App::RenderDeferred()
 {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -837,7 +713,7 @@ void App::RenderDeferred()
     glActiveTexture(GL_TEXTURE0);
 
     // Bind the texture of the dice
-    glBindTexture(GL_TEXTURE_2D, frameBuffer.finalAttachHandle);
+    glBindTexture(GL_TEXTURE_2D, CurrentMode());
 
     // Draw the elements to the screen
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
@@ -847,6 +723,11 @@ void App::RenderDeferred()
 
     // Unuse the program used
     glUseProgram(0);
+
+}
+
+void App::RenderDeferred()
+{
 
 }
 
