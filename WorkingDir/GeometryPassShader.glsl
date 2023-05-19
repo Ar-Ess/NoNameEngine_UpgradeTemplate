@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
-#ifdef TEXTURED_GEOMETRY
+#ifdef GEOMETRY_PASS
 
 struct Light
 {
@@ -79,11 +79,7 @@ layout(binding = 0, std140) uniform GlobalParams
 	Light uLight[16];
 };
 
-layout(location=0) out vec4 final;
-layout(location=1) out vec4 specular;
-layout(location=2) out vec4 normals;
-layout(location=3) out vec4 position;
-layout(location=4) out vec4 albedo;
+layout(location=0) out vec4 fragColor;
 
 vec3 DirectionalLight(in Light light, in vec3 texColor)
 {
@@ -152,12 +148,8 @@ vec3 SpotLight(in Light light, in vec3 texColor)
 
 void main()
 {
-	albedo = texture(uTexture, vTexCoord);
-	albedo.w = 1;
-	normals = vec4(vNormal, 1);
-	position = vec4(vPosition, 1);
-	specular = vec4(vec3(0.5), 1);
-
+	vec4 tex = texture(uTexture, vTexCoord);
+	vec3 texColor = vec3(tex);
 	vec3 color = vec3(0);
 	bool anyLightActive = false;
 
@@ -169,15 +161,15 @@ void main()
 
 		switch(light.type)
 		{
-			case 1: color += DirectionalLight(light, vec3(albedo)); break;
-			case 2: color += PointLight(light, vec3(albedo)); break;
-			case 3: color += SpotLight(light, vec3(albedo)); break;
+			case 1: color += DirectionalLight(light, texColor); break;
+			case 2: color += PointLight(light, texColor); break;
+			case 3: color += SpotLight(light, texColor); break;
 		}
 	}
 
-	if (!anyLightActive) color += (ambient * vec3(1)) * vec3(albedo);
+	if (!anyLightActive) color += (ambient * vec3(1)) * texColor;
 
-	final = vec4(color, 1);
+	fragColor = vec4(color, 1.0);
 }
 
 #endif ///////////////////////////////////////////////

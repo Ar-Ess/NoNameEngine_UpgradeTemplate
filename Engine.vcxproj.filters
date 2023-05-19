@@ -157,10 +157,13 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="WorkingDir\TextureShader.glsl">
+    <None Include="WorkingDir\MeshShader.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="WorkingDir\MeshShader.glsl">
+    <None Include="WorkingDir\GeometryPassShader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\TextureShader.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

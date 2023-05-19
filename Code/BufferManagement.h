@@ -100,15 +100,19 @@ void InitFrameBuffer(FrameBuffer& buffer)
     GLuint handle = 0;
     glGenFramebuffers(1, &handle);
     glBindFramebuffer(GL_FRAMEBUFFER, handle);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer.colorAttachHandle, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer.depthAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer.finalAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, buffer.specularAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, buffer.normalsAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, buffer.positionAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, buffer.albedoAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, buffer.depthAttachHandle, 0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE)
     {
         switch (status)
         {
-        case GL_FRAMEBUFFER_UNDEFINED:                     ELOG("GL_FRAMEBUFFER_UNDEFINEd                    "); break;
+        case GL_FRAMEBUFFER_UNDEFINED:                     ELOG("GL_FRAMEBUFFER_UNDEFINED                    "); break;
         case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT        "); break;
         case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
         case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER       "); break;
@@ -120,7 +124,8 @@ void InitFrameBuffer(FrameBuffer& buffer)
         }
     }
 
-    glDrawBuffers(1, &buffer.colorAttachHandle);
+    GLenum draw[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
+    glDrawBuffers(ARRAY_COUNT(draw), draw);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     buffer.handle = handle;
@@ -129,7 +134,11 @@ void InitFrameBuffer(FrameBuffer& buffer)
 FrameBuffer CreateFrameBuffer(ivec2 display)
 {
     FrameBuffer buffer;
-    buffer.colorAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
+    buffer.albedoAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
+    buffer.specularAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
+    buffer.normalsAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
+    buffer.positionAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
+    buffer.finalAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
     buffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display);
     InitFrameBuffer(buffer);
 

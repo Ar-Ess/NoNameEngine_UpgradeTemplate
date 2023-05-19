@@ -18,6 +18,7 @@
 #include "Typedef.h"
 
 struct Buffer;
+class TexturedQuad;
 
 struct OpenGLInfo
 {
@@ -44,8 +45,14 @@ struct OpenGLInfo
 struct FrameBuffer
 {
 
-    GLuint colorAttachHandle = 0;
+    GLuint albedoAttachHandle = 0;
+    GLuint specularAttachHandle = 0;
+    GLuint normalsAttachHandle = 0;
+    GLuint positionAttachHandle = 0;
     GLuint depthAttachHandle = 0;
+
+    GLuint finalAttachHandle = 0;
+
     GLuint handle = 0;
 };
 
@@ -76,7 +83,7 @@ struct App
     std::vector<Object*>  objects;
     std::vector<Material*> materials;
 
-    void InitTexturedQuad(const char* texture, glm::vec3 position = glm::vec3(0.f));
+    TexturedQuad* InitTexturedQuad(const char* texture, glm::vec3 position = glm::vec3(0.f));
     void InitModel(const char* path, glm::vec3 position = glm::vec3(0.f));
     void AddPointLight(glm::vec3 color, glm::vec3 position);
     void AddDirectLight(glm::vec3 color, glm::vec3 direction);
@@ -117,7 +124,9 @@ struct App
     u32 globalParamsSize = 0;
     Buffer cbuffer;
     float ambient = 0.1;
-    bool deferred = false;
+    bool deferred = true;
+
+    TexturedQuad* screenQuad = nullptr;
 };
 
 void Init(App* app);

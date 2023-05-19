@@ -68,6 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="WorkingDir\MeshShader.glsl" />
+    <None Include="WorkingDir\GeometryPassShader.glsl" />
     <None Include="WorkingDir\TextureShader.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -197,16 +197,18 @@ void Init(App* app)
     app->InitModel("Patrick/Patrick.obj");
     app->InitModel("Primitives/Plane/Plane.obj", glm::vec3(0, -4, 0));
 
+    app->screenQuad = app->InitTexturedQuad(nullptr);
+
     app->AddDirectLight(glm::vec3(1, 1, 1), glm::vec3(1, 1, 1));
 }
 
-void App::InitTexturedQuad(const char* texture, glm::vec3 position)
+TexturedQuad* App::InitTexturedQuad(const char* texture, glm::vec3 position)
 {
     const Vertex vertex[] = {
-        Vertex(-0.5f, -0.5f, 0.0f, 0.0f, 0.0f),
-        Vertex(0.5f, -0.5f, 0.0f, 1.0f, 0.0f),
-        Vertex(0.5f,  0.5f, 0.0f, 1.0f, 1.0f),
-        Vertex(-0.5f,  0.5f, 0.0f, 0.0f, 1.0f)
+        Vertex(-1.f, -1.f, 0.0f, 0.0f, 0.0f),
+        Vertex(1.f, -1.f, 0.0f, 1.0f, 0.0f),
+        Vertex(1.f,  1.0f, 0.0f, 1.0f, 1.0f),
+        Vertex(-1.f,  1.f, 0.0f, 0.0f, 1.0f)
     };
 
     const u16 index[] = {
@@ -215,8 +217,11 @@ void App::InitTexturedQuad(const char* texture, glm::vec3 position)
     };
 
     TexturedQuad* quad = new TexturedQuad();
-    quad->position = position;
-    quad->UpdateTransform();
+    if (position.x + position.y + position.z != 0)
+    {
+        quad->position = position;
+        quad->UpdateTransform();
+    }
 
     // Generar buffer i et retorna id
     glGenBuffers(1, &quad->vertexs);
@@ -266,11 +271,15 @@ void App::InitTexturedQuad(const char* texture, glm::vec3 position)
     quad->programHandle = texturedGeometryProgram.handle;
     quad->texUniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 
-    quad->texture = LoadTexture2D(this, texture);
-
-    objects.emplace_back(quad);
-
-    quad->name = "Quad";
+    if (texture != nullptr)
+    {
+        quad->texture = LoadTexture2D(this, texture);
+        objects.emplace_back(quad);
+        quad->name = "Quad";
+        return nullptr;
+    }
+    
+    return quad;
 }
 
 void App::InitModel(const char* path, glm::vec3 position)
@@ -681,17 +690,164 @@ void App::RenderForward()
 
 void App::RenderDeferred()
 {
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     // Bind the buffer
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer.handle);
-
-    // Select which render targets
-    GLuint drawBuffers[] = { frameBuffer.colorAttachHandle };
-    glDrawBuffers(ARRAY_COUNT(drawBuffers), drawBuffers);
 
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer.handle);
+    // Uniforms
+    {
+        // Fill Uniform Buffer once per update
+        BindBuffer(cbuffer);
+        MapBuffer(cbuffer, GL_WRITE_ONLY);
+
+        // -- Global Parameters
+        globalParamsOffset = cbuffer.head;
+        PushVec3(cbuffer, cam->Position());
+        PushFloat(cbuffer, ambient);
+        PushUInt(cbuffer, lights.size());
+
+        for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
+        {
+            AlignHead(cbuffer, sizeof(glm::vec4));
+
+            Light* l = (*it);
+            PushUInt(cbuffer, (int)l->type);
+            PushVec3(cbuffer, l->color);
+            PushVec3(cbuffer, l->direction);
+            PushVec3(cbuffer, l->position);
+            PushFloat(cbuffer, l->Cutoff());
+            PushFloat(cbuffer, l->OuterCuttoff());
+            PushFloat(cbuffer, l->intensity);
+            PushUInt(cbuffer, l->active);
+        }
+
+        globalParamsSize = cbuffer.head - globalParamsOffset;
+
+        // -- Local Parameters
+        u32 localParamsFullSize = 0;
+        for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
+        {
+            Object* o = (*it);
+            if (o->Type() == ObjectType::O_LIGHT) continue;
+
+            AlignHead(cbuffer, GetUniformBlockAlignment());
+
+            o->localParamsOffset = cbuffer.head;
+            PushMat4(cbuffer, o->world);
+            PushMat4(cbuffer, GlobalMatrix(o->world));
+
+            o->localParamsSize = cbuffer.head - o->localParamsOffset;
+            localParamsFullSize += o->localParamsSize;
+        }
+
+        UnmapBuffer(cbuffer);
+        UnbindBuffer(cbuffer);
+
+        BindBufferRange(cbuffer, BINDING(0), 0, globalParamsSize); // Binding Global Params
+
+        ///////////////////
+    }
+
+    // Draw 3D Geometry
+    for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
+    {
+        Object* o = (*it);
+        if (!o->active) continue;
+
+        switch (o->Type())
+        {
+        case ObjectType::O_TEXTURED_QUAD:
+        {
+            TexturedQuad* tQ = (TexturedQuad*)o;
+            // Get & Set the program to be used
+            glUseProgram(programs[tQ->vao.program]->handle);
+            // Bind the vao vertex array
+            glBindVertexArray(tQ->vao.handle);
+
+            // Send the texture as uniform variable to glsl script
+            glUniform1i(o->texUniform, 0);
+            // Activate slot for a texture
+            glActiveTexture(GL_TEXTURE0);
+
+            // Bind the texture of the dice
+            glBindTexture(GL_TEXTURE_2D, textures[tQ->texture]->handle);
+
+            // Draw the elements to the screen
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
+            // Unbind the vertex array
+            glBindVertexArray(0);
+            // Unuse the program used
+            glUseProgram(0);
+
+            break;
+        }
+
+        case ObjectType::O_MODEL:
+        {
+            Model* m = (Model*)o;
+
+            BindBufferRange(cbuffer, BINDING(1), o->localParamsOffset, o->localParamsSize); // Binding Local Params
+
+            glUseProgram(programs[m->program]->handle);
+
+            unsigned int size = m->meshes.size();
+            for (u32 i = 0; i < size; ++i)
+            {
+                GLuint vao = m->FindVAO(i, programs[m->program]);
+                glBindVertexArray(vao);
+
+                Material* mat = materials[m->materials[i]];
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, textures[mat->diffuseTex]->handle);
+                glUniform1i(m->texUniform, 0);
+
+                Mesh* mesh = m->meshes[i];
+                glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
+
+                glBindVertexArray(0);
+            }
+
+            glUseProgram(0);
+
+            break;
+        }
+
+        default: break;
+        }
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    
+    // Get & Set the program to be used
+    glUseProgram(programs[screenQuad->vao.program]->handle);
+
+    // Bind the vao vertex array
+    glBindVertexArray(screenQuad->vao.handle);
+
+    // Send the texture as uniform variable to glsl script
+    glUniform1i(screenQuad->texUniform, 0);
+    // Activate slot for a texture
+    glActiveTexture(GL_TEXTURE0);
+
+    // Bind the texture of the dice
+    glBindTexture(GL_TEXTURE_2D, frameBuffer.finalAttachHandle);
+
+    // Draw the elements to the screen
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
+    // Unbind the vertex array
+    glBindVertexArray(0);
+
+    // Unuse the program used
+    glUseProgram(0);
+
 }
 
 void App::HotReload()
