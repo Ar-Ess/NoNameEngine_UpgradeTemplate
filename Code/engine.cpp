@@ -180,7 +180,7 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
-    app->cam = new Camera(glm::vec3(0, 0, 10), app->displaySize.x/app->displaySize.y, 0.1, 1000);
+    app->cam = new Camera(glm::vec3(0, 3, 26), app->displaySize.x/app->displaySize.y, 0.1, 1000);
 
     if (GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 3))
         glDebugMessageCallback(OnGlError, app);
@@ -192,15 +192,20 @@ void Init(App* app)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     app->cbuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
-
     app->frameBuffer = CreateFrameBuffer(app->displaySize);
-
-    app->InitModel("Patrick/Patrick.obj");
-    app->InitModel("Primitives/Plane/Plane.obj", glm::vec3(0, -4, 0));
-
     app->screenQuad = app->InitTexturedQuad(nullptr);
 
-    app->AddDirectLight(glm::vec3(1, 1, 1), glm::vec3(1, 1, 1));
+    app->InitModel("Patrick/Patrick.obj", vec3( 0, 1.5, 20), 0.4);
+    app->InitModel("Patrick/Patrick.obj", vec3(-7,   0,  5));
+    app->InitModel("Patrick/Patrick.obj", vec3( 6,   3, -2));
+    app->InitModel("Primitives/Plane/Plane.obj", glm::vec3(0, -4, 0), 3);
+
+    app->AddDirectLight(glm::vec3(  1,   1, 0.75), glm::vec3( 0.35, 0.75,   0))->intensity = 0.3;
+    app->AddDirectLight(glm::vec3(  1, 0.5,  0.5), glm::vec3(   -1,   -1, 0.2))->intensity = 0.6;
+    app->AddPointLight (glm::vec3(0.9, 0.9,    0), glm::vec3(  6.7,  0.1, 0.9))->intensity = 0.6;
+    app->AddPointLight (glm::vec3(  1, 0.3,    0), glm::vec3( -6.5,  0.1,  11))->intensity = 1.2;
+    app->AddPointLight (glm::vec3(0.8, 0.1,  0.5), glm::vec3(  0.5,    0,  21))->intensity = 1.7;
+    app->AddSpotLight  (glm::vec3(  1,   1,    1), glm::vec3(    3,    1,   2), glm::vec3(0, 0, -1), 20);
 }
 
 TexturedQuad* App::InitTexturedQuad(const char* texture, glm::vec3 position)
@@ -283,7 +288,7 @@ TexturedQuad* App::InitTexturedQuad(const char* texture, glm::vec3 position)
     return quad;
 }
 
-void App::InitModel(const char* path, glm::vec3 position)
+void App::InitModel(const char* path, glm::vec3 position, float scale)
 {
     u32 program = LoadProgram(this, "MeshShader.glsl", "TEXTURED_GEOMETRY");
 
@@ -307,6 +312,7 @@ void App::InitModel(const char* path, glm::vec3 position)
     m->program = program;
     m->programHandle = p->handle;
     m->position = position;
+    m->scale = vec3(scale);
     m->UpdateTransform();
     m->texUniform = texUniform;
 
@@ -316,28 +322,34 @@ void App::InitModel(const char* path, glm::vec3 position)
 
 }
 
-void App::AddPointLight(glm::vec3 color, glm::vec3 position)
+Light* App::AddPointLight(glm::vec3 color, glm::vec3 position)
 {
     Light* l = new Light(LightType::LT_POINT, color, position, glm::vec3(), 0);
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Point Light";
+
+    return l;
 }
 
-void App::AddDirectLight(glm::vec3 color, glm::vec3 direction)
+Light* App::AddDirectLight(glm::vec3 color, glm::vec3 direction)
 {
     Light* l = new Light(LightType::LT_DIRECTIONAL, color, glm::vec3(), direction, 0);
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Directional Light";
+
+    return l;
 }
 
-void App::AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff)
+Light* App::AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff)
 {
     Light* l = new Light(LightType::LT_SPOT, color, position, direction, cutoff);
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Spot Light";
+
+    return l;
 }
 
 void App::DeleteObject(intptr_t selected)
