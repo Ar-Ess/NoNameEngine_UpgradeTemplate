@@ -127,15 +127,15 @@ struct App
 
     TexturedQuad* screenQuad = nullptr;
 
-    // Mode Combo
-    int currentMode = 0;
-    const char* modes[5] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO"};
+    // Targets Combo
+    int currentRenderTarget = 0;
+    const char* renderTargets[5] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO"};
 
-    GLuint CurrentMode()
+    GLuint CurrentRenderTarget()
     {
         GLuint ret;
 
-        switch (currentMode)
+        switch (currentRenderTarget)
         {
             default: ret = frameBuffer.finalAttachHandle; break;
             case 1: ret = frameBuffer.specularAttachHandle; break;

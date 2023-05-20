@@ -435,8 +435,10 @@ void App::GUI()
             ImGui::DragFloat("##amb", &ambient, 0.01, 0, 1, "%.2f");
             ImGui::PopItemWidth();
 
-            ImGui::Text("Mode:"); ImGui::SameLine();
-            ImGui::Combo("##mode", &currentMode, modes, 5);
+            ImGui::PushItemWidth(130);
+            ImGui::Text("Target:  "); ImGui::SameLine();
+            ImGui::Combo("##target", &currentRenderTarget, renderTargets, ARRAY_COUNT(renderTargets));
+            ImGui::PopItemWidth();
 
             ImGui::EndMenu();
         }
@@ -558,17 +560,15 @@ void App::Input()
 
 void Render(App* app)
 {
-    // Intentar posar aquí el glClear
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-   if (!app->deferred) app->RenderForward();
-   else app->RenderDeferred();
+    if (!app->deferred) app->RenderForward();
+    else app->RenderDeferred();
 }
 
 void App::RenderForward()
 {
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     // Bind the buffer
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer.handle);
 
@@ -699,30 +699,33 @@ void App::RenderForward()
         }
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    
-    // Get & Set the program to be used
-    glUseProgram(programs[screenQuad->vao.program]->handle);
+    // Draw Frame Buffer
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Bind the vao vertex array
-    glBindVertexArray(screenQuad->vao.handle);
+        // Get & Set the program to be used
+        glUseProgram(programs[screenQuad->vao.program]->handle);
 
-    // Send the texture as uniform variable to glsl script
-    glUniform1i(screenQuad->texUniform, 0);
-    // Activate slot for a texture
-    glActiveTexture(GL_TEXTURE0);
+        // Bind the vao vertex array
+        glBindVertexArray(screenQuad->vao.handle);
 
-    // Bind the texture of the dice
-    glBindTexture(GL_TEXTURE_2D, CurrentMode());
+        // Send the texture as uniform variable to glsl script
+        glUniform1i(screenQuad->texUniform, 0);
+        // Activate slot for a texture
+        glActiveTexture(GL_TEXTURE0);
 
-    // Draw the elements to the screen
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+        // Bind the texture of the dice
+        glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget());
 
-    // Unbind the vertex array
-    glBindVertexArray(0);
+        // Draw the elements to the screen
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
 
-    // Unuse the program used
-    glUseProgram(0);
+        // Unbind the vertex array
+        glBindVertexArray(0);
+
+        // Unuse the program used
+        glUseProgram(0);
+    }
 
 }
 
