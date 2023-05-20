@@ -431,14 +431,23 @@ void App::GUI()
             ImGui::Checkbox("##sfps", &showFps);
 
             ImGui::PushItemWidth(65);
-            ImGui::Text("Ambient: "); ImGui::SameLine();
+            ImGui::Text(" Ambient:"); ImGui::SameLine();
             ImGui::DragFloat("##amb", &ambient, 0.01, 0, 1, "%.2f");
             ImGui::PopItemWidth();
 
             ImGui::PushItemWidth(130);
-            ImGui::Text("Target:  "); ImGui::SameLine();
+            ImGui::Text("  Target:"); ImGui::SameLine();
             ImGui::Combo("##target", &currentRenderTarget, renderTargets, ARRAY_COUNT(renderTargets));
             ImGui::PopItemWidth();
+
+            if (currentRenderTarget == 5)
+            {
+                ImGui::Dummy(ImVec2(20, 0)); ImGui::SameLine();
+                ImGui::PushItemWidth(83);
+                ImGui::DragFloat("##near", &depthNear, 0.1f, 0.1f, 999999.f, "Near: %.1f"); ImGui::SameLine();
+                ImGui::DragFloat("##far", &depthFar, 0.1f, 0.1f, 999999.f, "Far: %.1f");
+                ImGui::PopItemWidth();
+            }
 
             ImGui::EndMenu();
         }
@@ -585,6 +594,8 @@ void App::RenderForward()
         globalParamsOffset = cbuffer.head;
         PushVec3(cbuffer, cam->Position());
         PushFloat(cbuffer, ambient);
+        PushFloat(cbuffer, depthNear);
+        PushFloat(cbuffer, depthFar);
         PushUInt(cbuffer, lights.size());
 
         for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)

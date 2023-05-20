@@ -33,6 +33,8 @@ layout(binding = 0, std140) uniform GlobalParams
 {
 	vec3 uCameraPosition;
 	float ambient;
+	float near;
+	float far;
 	uint uLightCount;
 	Light uLight[16];
 };
@@ -75,6 +77,8 @@ layout(binding = 0, std140) uniform GlobalParams
 {
 	vec3 uCameraPosition;
 	float ambient;
+	float near;
+	float far;
 	uint uLightCount;
 	Light uLight[16];
 };
@@ -84,6 +88,7 @@ layout(location=1) out vec4 specular;
 layout(location=2) out vec4 normals;
 layout(location=3) out vec4 position;
 layout(location=4) out vec4 albedo;
+layout(location=5) out vec4 zDepth;
 
 vec3 DirectionalLight(in Light light, in vec3 texColor)
 {
@@ -150,6 +155,15 @@ vec3 SpotLight(in Light light, in vec3 texColor)
 	return ret * texColor;
 }
 
+float ComputeDepth()
+{
+	float depth = gl_FragCoord.z;
+
+	float z = depth * 2.0 - 1.0; // back to NDC 
+    float endDepth = (2.0 * near * far) / (far + near - z * (far - near));
+	return endDepth / far;
+}
+
 void main()
 {
 	albedo = texture(uTexture, vTexCoord);
@@ -157,6 +171,7 @@ void main()
 	normals = vec4(vNormal, 1);
 	position = vec4(vPosition, 1);
 	specular = vec4(vec3(0.5), 1);
+	zDepth = vec4(vec3(ComputeDepth()), 1);
 
 	vec3 color = vec3(0);
 	bool anyLightActive = false;

@@ -48,6 +48,7 @@ struct FrameBuffer
     GLuint specularAttachHandle = 0;
     GLuint normalsAttachHandle = 0;
     GLuint positionAttachHandle = 0;
+    GLuint zAttachHandle = 0;
     GLuint depthAttachHandle = 0;
 
     GLuint finalAttachHandle = 0;
@@ -129,9 +130,11 @@ struct App
 
     // Targets Combo
     int currentRenderTarget = 0;
-    const char* renderTargets[5] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO"};
+    const char* renderTargets[6] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "DEPTH"};
+    float depthNear = 0.1;
+    float depthFar = 100;
 
-    GLuint CurrentRenderTarget()
+    GLuint CurrentRenderTarget() const
     {
         GLuint ret;
 
@@ -142,6 +145,7 @@ struct App
             case 2: ret = frameBuffer.normalsAttachHandle; break;
             case 3: ret = frameBuffer.positionAttachHandle; break;
             case 4: ret = frameBuffer.albedoAttachHandle; break;
+            case 5: ret = frameBuffer.zAttachHandle; break;
         }
 
         return ret;
