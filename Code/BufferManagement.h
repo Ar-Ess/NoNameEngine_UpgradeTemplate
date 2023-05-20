@@ -105,7 +105,6 @@ void InitFrameBuffer(FrameBuffer& buffer)
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, buffer.normalsAttachHandle, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, buffer.positionAttachHandle, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, buffer.albedoAttachHandle, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, buffer.zAttachHandle, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  buffer.depthAttachHandle, 0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -125,7 +124,7 @@ void InitFrameBuffer(FrameBuffer& buffer)
         }
     }
 
-    GLenum draw[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
+    GLenum draw[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
     glDrawBuffers(ARRAY_COUNT(draw), draw);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -139,7 +138,6 @@ FrameBuffer CreateFrameBuffer(ivec2 display)
     buffer.specularAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
     buffer.normalsAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
     buffer.positionAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
-    buffer.zAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
     buffer.finalAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
     buffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display);
     InitFrameBuffer(buffer);

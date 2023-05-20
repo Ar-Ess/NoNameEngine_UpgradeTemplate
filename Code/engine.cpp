@@ -186,6 +186,7 @@ void Init(App* app)
         glDebugMessageCallback(OnGlError, app);
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
     glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -570,7 +571,7 @@ void App::Input()
 void Render(App* app)
 {
     glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     if (!app->deferred) app->RenderForward();
     else app->RenderDeferred();
@@ -582,7 +583,7 @@ void App::RenderForward()
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer.handle);
 
     glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     // Uniforms
     {

@@ -48,7 +48,6 @@ struct FrameBuffer
     GLuint specularAttachHandle = 0;
     GLuint normalsAttachHandle = 0;
     GLuint positionAttachHandle = 0;
-    GLuint zAttachHandle = 0;
     GLuint depthAttachHandle = 0;
 
     GLuint finalAttachHandle = 0;
@@ -145,7 +144,7 @@ struct App
             case 2: ret = frameBuffer.normalsAttachHandle; break;
             case 3: ret = frameBuffer.positionAttachHandle; break;
             case 4: ret = frameBuffer.albedoAttachHandle; break;
-            case 5: ret = frameBuffer.zAttachHandle; break;
+            case 5: ret = frameBuffer.depthAttachHandle; break;
         }
 
         return ret;

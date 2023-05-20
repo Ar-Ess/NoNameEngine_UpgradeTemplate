@@ -88,7 +88,6 @@ layout(location=1) out vec4 specular;
 layout(location=2) out vec4 normals;
 layout(location=3) out vec4 position;
 layout(location=4) out vec4 albedo;
-layout(location=5) out vec4 zDepth;
 
 vec3 DirectionalLight(in Light light, in vec3 texColor)
 {
@@ -171,7 +170,7 @@ void main()
 	normals = vec4(vNormal, 1);
 	position = vec4(vPosition, 1);
 	specular = vec4(vec3(0.5), 1);
-	zDepth = vec4(vec3(ComputeDepth()), 1);
+	gl_FragDepth = ComputeDepth();
 
 	vec3 color = vec3(0);
 	bool anyLightActive = false;
