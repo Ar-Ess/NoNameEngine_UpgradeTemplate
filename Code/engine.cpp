@@ -1,7 +1,6 @@
 #include "engine.h"
 #include "TexturedQuad.h"
 #include "Model.h"
-//#include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include "AssimpLoading.h"
