@@ -67,7 +67,8 @@
     <ClInclude Include="ThirdParty\stb\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="WorkingDir\MeshShader.glsl" />
+    <None Include="WorkingDir\LightingPassShader.glsl" />
+    <None Include="WorkingDir\ForwardShader.glsl" />
     <None Include="WorkingDir\GeometryPassShader.glsl" />
     <None Include="WorkingDir\TextureShader.glsl" />
   </ItemGroup>

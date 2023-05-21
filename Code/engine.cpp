@@ -205,7 +205,7 @@ void Init(App* app)
     app->AddPointLight (glm::vec3(0.9, 0.9,    0), glm::vec3(  6.7,  0.1, 0.9))->intensity = 0.6;
     app->AddPointLight (glm::vec3(  1, 0.3,    0), glm::vec3( -6.5,  0.1,  11))->intensity = 1.2;
     app->AddPointLight (glm::vec3(0.8, 0.1,  0.5), glm::vec3(  0.5,    0,  21))->intensity = 1.7;
-    app->AddSpotLight  (glm::vec3(  1,   1,    1), glm::vec3(    3,    1,   2), glm::vec3(0, 0, -1), 20);
+    app->AddSpotLight  (glm::vec3(  0,   1,    1), glm::vec3(    6,   10,  -1), glm::vec3(0, -1, 0), 18)->intensity = 1.5;
 }
 
 TexturedQuad* App::InitTexturedQuad(const char* texture, glm::vec3 position)
@@ -290,7 +290,7 @@ TexturedQuad* App::InitTexturedQuad(const char* texture, glm::vec3 position)
 
 void App::InitModel(const char* path, glm::vec3 position, float scale)
 {
-    u32 program = LoadProgram(this, "MeshShader.glsl", "TEXTURED_GEOMETRY");
+    u32 program = LoadProgram(this, "ForwardShader.glsl", "FORWARD_SHADER");
 
     Program* p = programs[program];
     GLuint texUniform = glGetUniformLocation(p->handle, "uTexture");
