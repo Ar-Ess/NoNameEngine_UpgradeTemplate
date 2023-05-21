@@ -45,6 +45,7 @@
     <ClInclude Include="Code\Mesh.h" />
     <ClInclude Include="Code\Model.h" />
     <ClInclude Include="Code\Object.h" />
+    <ClInclude Include="Code\OpenGlInfo.h" />
     <ClInclude Include="Code\platform.h" />
     <ClInclude Include="Code\Program.h" />
     <ClInclude Include="Code\Texture.h" />

@@ -170,6 +170,9 @@
     <ClInclude Include="Code\FrameBuffer.h">
       <Filter>Engine\Internal\Buffers</Filter>
     </ClInclude>
+    <ClInclude Include="Code\OpenGlInfo.h">
+      <Filter>Engine\Internal\Units</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="WorkingDir\GeometryPassShader.glsl">
