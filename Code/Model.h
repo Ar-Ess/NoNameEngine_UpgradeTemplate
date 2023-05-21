@@ -33,14 +33,14 @@ public:
 		return change;
 	}
 
-	unsigned int FindVAO(unsigned int index, const Program* program)
+	unsigned int FindVAOForward(unsigned int index, const Program* program)
 	{
 		Mesh* mesh = meshes[index];
 
 		unsigned int size = mesh->vaos.size();
 		for (unsigned int i = 0; i < size; ++i)
 		{
-			if (mesh->vaos[i].program == program->handle)
+			if (mesh->vaos[i].programFW == program->handle)
 				return mesh->vaos[i].handle;
 		}
 
@@ -48,7 +48,27 @@ public:
 		unsigned int vaoHandle = CreateNewVao(program, mesh);
 
 		// Store it in the list of vaos for this mesh
-		mesh->vaos.emplace_back(Vao(vaoHandle, program->handle));
+		mesh->vaos.emplace_back(Vao(vaoHandle, program->handle, true));
+
+		return vaoHandle;
+	}
+
+	unsigned int FindVAODeferred(unsigned int index, const Program* program)
+	{
+		Mesh* mesh = meshes[index];
+
+		unsigned int size = mesh->vaos.size();
+		for (unsigned int i = 0; i < size; ++i)
+		{
+			if (mesh->vaos[i].programDF == program->handle)
+				return mesh->vaos[i].handle;
+		}
+
+		// Create new vao for this mesh/program
+		unsigned int vaoHandle = CreateNewVao(program, mesh);
+
+		// Store it in the list of vaos for this mesh
+		mesh->vaos.emplace_back(Vao(vaoHandle, program->handle, false));
 
 		return vaoHandle;
 	}

@@ -49,7 +49,7 @@ public:
     std::vector<Light*> lights;
 
     intptr_t selected = 0;
-    TexturedQuad* InitTexturedQuad(const char* texture, glm::vec3 position = glm::vec3(0.f));
+    TexturedQuad* InitTexturedQuad(const char* texture, bool forward, glm::vec3 position = glm::vec3(0.f));
     void InitModel(const char* path, glm::vec3 position = glm::vec3(0.f), float scale = 1);
     Light* AddPointLight(glm::vec3 color, glm::vec3 position);
     Light* AddDirectLight(glm::vec3 color, glm::vec3 direction);
@@ -72,8 +72,12 @@ public:
 
     // Buffers
     FrameBuffer frameBuffer;
-    Buffer      constBuffer;
-    TexturedQuad* screenQuad = nullptr;
+    FrameBuffer gBuffer;
+    Buffer      forwardConstBuffer;
+    Buffer      deferredGConstBuffer;
+    Buffer      deferredLConstBuffer;
+    TexturedQuad* frameQuad = nullptr;
+    TexturedQuad* deferredQuad = nullptr;
 
     // Camera
     glm::mat4 GlobalMatrix(glm::mat4 world)

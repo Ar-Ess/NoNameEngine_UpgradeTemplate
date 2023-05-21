@@ -72,7 +72,7 @@ void PushAlignedData(Buffer& buffer, const void* data, u32 size, u32 alignment)
     buffer.head += size;
 }
 
-GLuint CreateFrameBufferAttachement(GLuint format, ivec2 display)
+GLuint CreateFrameBufferAttachement(GLuint format, ivec2 display, GLuint type)
 {
     GLuint glRGBA = GL_RGBA;
     GLuint glDepthComponent = GL_DEPTH_COMPONENT;
@@ -80,7 +80,6 @@ GLuint CreateFrameBufferAttachement(GLuint format, ivec2 display)
 
     GLuint handle = 0;
     GLuint internalFormat = format == GL_RGBA ? GL_RGBA8 : GL_DEPTH_COMPONENT24;
-    GLuint type = format == GL_RGBA ? GL_UNSIGNED_BYTE : GL_FLOAT;
 
     glGenTextures(1, &handle);
     glBindTexture(GL_TEXTURE_2D, handle);
@@ -100,12 +99,12 @@ void InitFrameBuffer(FrameBuffer& buffer)
     GLuint handle = 0;
     glGenFramebuffers(1, &handle);
     glBindFramebuffer(GL_FRAMEBUFFER, handle);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer.finalAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer.finalAttachHandle,    0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, buffer.specularAttachHandle, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, buffer.normalsAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, buffer.normalsAttachHandle,  0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, buffer.positionAttachHandle, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, buffer.albedoAttachHandle, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  buffer.depthAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, buffer.albedoAttachHandle,   0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  buffer.depthAttachHandle,    0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE)
@@ -134,12 +133,12 @@ void InitFrameBuffer(FrameBuffer& buffer)
 FrameBuffer CreateFrameBuffer(ivec2 display)
 {
     FrameBuffer buffer;
-    buffer.albedoAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
-    buffer.specularAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
-    buffer.normalsAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
-    buffer.positionAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
-    buffer.finalAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display);
-    buffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display);
+    buffer.albedoAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_UNSIGNED_BYTE);
+    buffer.specularAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_UNSIGNED_BYTE);
+    buffer.normalsAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT);
+    buffer.positionAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT);
+    buffer.finalAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT);
+    buffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display, GL_FLOAT);
     InitFrameBuffer(buffer);
 
     return buffer;

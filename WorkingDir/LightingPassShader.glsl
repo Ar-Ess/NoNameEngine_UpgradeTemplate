@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
-#ifdef GEOMETRY_PASS
+#ifdef LIGHTING_PASS
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
@@ -10,6 +10,18 @@ void main()
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
+
+uniform sampler2D gFinal;
+uniform sampler2D gSpecular;
+uniform sampler2D gNormals;
+uniform sampler2D gPosition;
+uniform sampler2D gAlbedo;
+
+layout(location=0) out vec4 final;
+layout(location=1) out vec4 specular;
+layout(location=2) out vec4 normals;
+layout(location=3) out vec4 position;
+layout(location=4) out vec4 albedo;
 
 void main()
 {
