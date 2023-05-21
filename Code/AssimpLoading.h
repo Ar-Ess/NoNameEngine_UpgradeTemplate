@@ -219,12 +219,12 @@ Model* LoadModel(App* app, const char* filename)
         indexBufferSize += m->meshes[i]->indexs.size() * sizeof(u32);
     }
 
-    glGenBuffers(1, &m->vertexs);
-    glBindBuffer(GL_ARRAY_BUFFER, m->vertexs);
+    glGenBuffers(1, &m->vertexHandle);
+    glBindBuffer(GL_ARRAY_BUFFER, m->vertexHandle);
     glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, NULL, GL_STATIC_DRAW);
 
-    glGenBuffers(1, &m->indexs);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indexs);
+    glGenBuffers(1, &m->indexHandle);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->indexHandle);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, NULL, GL_STATIC_DRAW);
 
     u32 indicesOffset = 0;

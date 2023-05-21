@@ -230,18 +230,18 @@ TexturedQuad* App::InitTexturedQuad(const char* texture, glm::vec3 position)
     }
 
     // Generar buffer i et retorna id
-    glGenBuffers(1, &quad->vertexs);
+    glGenBuffers(1, &quad->vertexHandle);
     // Bind del buffer per editarlo
-    glBindBuffer(GL_ARRAY_BUFFER, quad->vertexs);
+    glBindBuffer(GL_ARRAY_BUFFER, quad->vertexHandle);
     // Afegir data al buffer sobre els vertex
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertex), vertex, GL_STATIC_DRAW);
     // Desbindejar el buffer per no seguir editant-lo
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // Generar buffer i et retorna id
-    glGenBuffers(1, &quad->indexs);
+    glGenBuffers(1, &quad->indexHandle);
     // Bind del buffer per editarlo
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad->indexs);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad->indexHandle);
     // Afegir data al buffer sobre els index
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index), index, GL_STATIC_DRAW);
     // Desbindejar el buffer per no seguir editant-lo
@@ -254,7 +254,7 @@ TexturedQuad* App::InitTexturedQuad(const char* texture, glm::vec3 position)
     glBindVertexArray(quad->vao.handle);
     // Bind el buffer dels vertex per editarlo i colocarlo dins del vao
     // Quan bindejes a, i després bindejes b, estàs posant b dins a.
-    glBindBuffer(GL_ARRAY_BUFFER, quad->vertexs);
+    glBindBuffer(GL_ARRAY_BUFFER, quad->vertexHandle);
     // Dir-li com llegir aquesta data (pos dels vertex).
     // En aquest cas, 3 floats amb un total d'espai de "Vertex"
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0); // No offset
@@ -266,15 +266,14 @@ TexturedQuad* App::InitTexturedQuad(const char* texture, glm::vec3 position)
     // Activar aquesta manera de llegir (attribut)
     glEnableVertexAttribArray(1);
     // Bindejar al vao la array d'elements (indexs)
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad->indexs); // S s'ha de tancar, que normalment no cal, tancar-lo DESPRÉS de tancar el grup (el vao)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad->indexHandle); // S s'ha de tancar, que normalment no cal, tancar-lo DESPRÉS de tancar el grup (el vao)
 
     // Tancar el binding del vao (no cal tancar els de dins, ja es tenquen)
     glBindVertexArray(0);
 
     quad->program = quad->vao.program = LoadProgram(this, "TextureShader.glsl", "TEXTURED_GEOMETRY");
     
-    Program& texturedGeometryProgram = *programs[quad->vao.program];
-    quad->programHandle = texturedGeometryProgram.handle;
+    Program& texturedGeometryProgram = *programs[quad->program];
     quad->texUniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 
     if (texture != nullptr)
@@ -310,7 +309,6 @@ void App::InitModel(const char* path, glm::vec3 position, float scale)
 
     Model* m = LoadModel(this, path);
     m->program = program;
-    m->programHandle = p->handle;
     m->position = position;
     m->scale = vec3(scale);
     m->UpdateTransform();
@@ -665,7 +663,7 @@ void App::RenderForward()
         {
             TexturedQuad* tQ = (TexturedQuad*)o;
             // Get & Set the program to be used
-            glUseProgram(programs[tQ->vao.program]->handle);
+            glUseProgram(programs[tQ->program]->handle);
             // Bind the vao vertex array
             glBindVertexArray(tQ->vao.handle);
 
@@ -728,7 +726,7 @@ void App::RenderForward()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // Get & Set the program to be used
-        glUseProgram(programs[screenQuad->vao.program]->handle);
+        glUseProgram(programs[screenQuad->program]->handle);
 
         // Bind the vao vertex array
         glBindVertexArray(screenQuad->vao.handle);

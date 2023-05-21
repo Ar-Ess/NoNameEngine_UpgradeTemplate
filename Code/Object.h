@@ -106,11 +106,12 @@ public:
 	glm::vec3 rotation;
 	glm::vec3 scale;
 
-	GLuint vertexs = 0;
-	GLuint indexs = 0;
+	GLuint vertexHandle = 0;
+	GLuint indexHandle = 0;
 	GLuint texUniform = 0;
+	// Program list index, if handle needed, do this:
+	// programs[this->program]->handle
 	GLuint program = 0;
-	GLuint programHandle = 0;
 	bool active = true;
 
 protected:

@@ -59,8 +59,8 @@ public:
 		glGenVertexArrays(1, &vaoHandle);
 		glBindVertexArray(vaoHandle);
 
-		glBindBuffer(GL_ARRAY_BUFFER, vertexs);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexs);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexHandle);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexHandle);
 
 		for (VertexShaderLayout::const_iterator it = program->attributes.begin(); it != program->attributes.end(); ++it)
 		{
