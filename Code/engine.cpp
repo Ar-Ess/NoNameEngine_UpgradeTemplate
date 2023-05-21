@@ -186,12 +186,12 @@ void Init(App* app)
         glDebugMessageCallback(OnGlError, app);
 
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_STENCIL_TEST);
+    //glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
     glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    app->cbuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
+    app->constBuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
     app->frameBuffer = CreateFrameBuffer(app->displaySize);
     app->screenQuad = app->InitTexturedQuad(nullptr);
 
@@ -600,33 +600,33 @@ void App::RenderForward()
     // Uniforms
     {
         // Fill Uniform Buffer once per update
-        BindBuffer(cbuffer);
-        MapBuffer(cbuffer, GL_WRITE_ONLY);
+        BindBuffer(constBuffer);
+        MapBuffer(constBuffer, GL_WRITE_ONLY);
 
         // -- Global Parameters
-        globalParamsOffset = cbuffer.head;
-        PushVec3(cbuffer, cam->Position());
-        PushFloat(cbuffer, ambient);
-        PushFloat(cbuffer, depthNear);
-        PushFloat(cbuffer, depthFar);
-        PushUInt(cbuffer, lights.size());
+        u32 globalParamsOffset = constBuffer.head;
+        PushVec3(constBuffer, cam->Position());
+        PushFloat(constBuffer, ambient);
+        PushFloat(constBuffer, depthNear);
+        PushFloat(constBuffer, depthFar);
+        PushUInt(constBuffer, lights.size());
 
         for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
         {
-            AlignHead(cbuffer, sizeof(glm::vec4));
+            AlignHead(constBuffer, sizeof(glm::vec4));
 
             Light* l = (*it);
-            PushUInt(cbuffer, (int)l->type);
-            PushVec3(cbuffer, l->color);
-            PushVec3(cbuffer, l->direction);
-            PushVec3(cbuffer, l->position);
-            PushFloat(cbuffer, l->Cutoff());
-            PushFloat(cbuffer, l->OuterCuttoff());
-            PushFloat(cbuffer, l->intensity);
-            PushUInt(cbuffer, l->active);
+            PushUInt(constBuffer, (int)l->type);
+            PushVec3(constBuffer, l->color);
+            PushVec3(constBuffer, l->direction);
+            PushVec3(constBuffer, l->position);
+            PushFloat(constBuffer, l->Cutoff());
+            PushFloat(constBuffer, l->OuterCuttoff());
+            PushFloat(constBuffer, l->intensity);
+            PushUInt(constBuffer, l->active);
         }
 
-        globalParamsSize = cbuffer.head - globalParamsOffset;
+        u32 globalParamsSize = constBuffer.head - globalParamsOffset;
 
         // -- Local Parameters
         u32 localParamsFullSize = 0;
@@ -635,20 +635,20 @@ void App::RenderForward()
             Object* o = (*it);
             if (o->Type() == ObjectType::O_LIGHT) continue;
 
-            AlignHead(cbuffer, GetUniformBlockAlignment());
+            AlignHead(constBuffer, GetUniformBlockAlignment());
 
-            o->localParamsOffset = cbuffer.head;
-            PushMat4(cbuffer, o->world);
-            PushMat4(cbuffer, GlobalMatrix(o->world));
+            o->localParamsOffset = constBuffer.head;
+            PushMat4(constBuffer, o->world);
+            PushMat4(constBuffer, GlobalMatrix(o->world));
 
-            o->localParamsSize = cbuffer.head - o->localParamsOffset;
+            o->localParamsSize = constBuffer.head - o->localParamsOffset;
             localParamsFullSize += o->localParamsSize;
         }
 
-        UnmapBuffer(cbuffer);
-        UnbindBuffer(cbuffer);
+        UnmapBuffer(constBuffer);
+        UnbindBuffer(constBuffer);
 
-        BindBufferRange(cbuffer, BINDING(0), 0, globalParamsSize); // Binding Global Params
+        BindBufferRange(constBuffer, BINDING(0), 0, globalParamsSize); // Binding Global Params
 
         ///////////////////
     }
@@ -692,7 +692,7 @@ void App::RenderForward()
         {
             Model* m = (Model*)o;
 
-            BindBufferRange(cbuffer, BINDING(1), o->localParamsOffset, o->localParamsSize); // Binding Local Params
+            BindBufferRange(constBuffer, BINDING(1), o->localParamsOffset, o->localParamsSize); // Binding Local Params
 
             glUseProgram(programs[m->program]->handle);
 

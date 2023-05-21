@@ -38,6 +38,7 @@
     <ClInclude Include="Code\Camera.h" />
     <ClInclude Include="Code\engine.h" />
     <ClInclude Include="Code\Flag.h" />
+    <ClInclude Include="Code\FrameBuffer.h" />
     <ClInclude Include="Code\Image.h" />
     <ClInclude Include="Code\Light.h" />
     <ClInclude Include="Code\Material.h" />

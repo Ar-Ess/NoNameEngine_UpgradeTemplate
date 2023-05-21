@@ -43,21 +43,12 @@ struct OpenGLInfo
     std::vector<const char*> extensions;
 };
 
-struct FrameBuffer
+#include "FrameBuffer.h"
+
+class App
 {
-    GLuint albedoAttachHandle = 0;
-    GLuint specularAttachHandle = 0;
-    GLuint normalsAttachHandle = 0;
-    GLuint positionAttachHandle = 0;
-    GLuint depthAttachHandle = 0;
+public:
 
-    GLuint finalAttachHandle = 0;
-
-    GLuint handle = 0;
-};
-
-struct App
-{
     // Loop
     float deltaTime = 0;
     bool isRunning;
@@ -72,17 +63,20 @@ struct App
     // Render
     void RenderForward();
     void RenderDeferred();
+    void HotReload();
 
     // Graphics
     OpenGLInfo openGLInformation;
-
     ivec2 displaySize;
 
+    // Vectors
     std::vector<Texture*> textures;
     std::vector<Program*> programs;
     std::vector<Object*>  objects;
     std::vector<Material*> materials;
+    std::vector<Light*> lights;
 
+    intptr_t selected = 0;
     TexturedQuad* InitTexturedQuad(const char* texture, glm::vec3 position = glm::vec3(0.f));
     void InitModel(const char* path, glm::vec3 position = glm::vec3(0.f), float scale = 1);
     Light* AddPointLight(glm::vec3 color, glm::vec3 position);
@@ -90,8 +84,7 @@ struct App
     Light* AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff);
     void DeleteObject(intptr_t selected);
 
-    void HotReload();
-
+    // Getters
     GLint GetMaxUniformBlockSize() const
     {
         GLint a = 0;
@@ -105,30 +98,23 @@ struct App
         return a;
     }
 
-    GLuint uniformBufferHandle = 0;
+    // Buffers
     FrameBuffer frameBuffer;
+    Buffer      constBuffer;
+    TexturedQuad* screenQuad = nullptr;
 
-    intptr_t selected = 0;
-
-    std::vector<Light*> lights;
-
+    // Camera
     glm::mat4 GlobalMatrix(glm::mat4 world)
     {
         global = cam->projection * cam->view * world;
         return global;
     }
-
     Camera* cam = nullptr;
     glm::mat4 global = glm::mat4(1.0f);
-    u32 globalParamsOffset = 0;
-    u32 globalParamsSize = 0;
-    Buffer cbuffer;
-    float ambient = 0.1;
+
+    // Configuration
     bool deferred = false;
-
-    TexturedQuad* screenQuad = nullptr;
-
-    // Targets Combo
+    float ambient = 0.1;
     int currentRenderTarget = 0;
     const char* renderTargets[6] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "DEPTH"};
     float depthNear = 0.1;

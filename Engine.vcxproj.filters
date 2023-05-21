@@ -19,6 +19,18 @@
     <Filter Include="Engine\Internal">
       <UniqueIdentifier>{9dd263e1-31e9-491e-9934-17d2254b2a40}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Internal\Functionality">
+      <UniqueIdentifier>{605223bd-844e-477c-a788-3c4990b6832a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Internal\Units">
+      <UniqueIdentifier>{fb72da82-52f2-43f8-9e1b-c5175e344283}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Internal\Buffers">
+      <UniqueIdentifier>{0de7ca64-c248-492a-9641-5477d323feb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Internal\Objects">
+      <UniqueIdentifier>{fe20c967-8913-49e3-9f9a-c4825aa27614}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp">
@@ -95,65 +107,68 @@
     <ClInclude Include="ThirdParty\stb\stb_image.h">
       <Filter>Stb</Filter>
     </ClInclude>
-    <ClInclude Include="Code\Object.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\TexturedQuad.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Model.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Material.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Mesh.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\VertexBufferAttibute.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\VertexBufferLayout.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\VertexShaderAttribute.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Vao.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\AssimpLoading.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Texture.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Program.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
     <ClInclude Include="Code\Typedef.h">
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="Code\Camera.h">
       <Filter>Engine\Internal</Filter>
     </ClInclude>
-    <ClInclude Include="Code\Light.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Image.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Vertex.h">
-      <Filter>Engine\Internal</Filter>
+    <ClInclude Include="Code\AssimpLoading.h">
+      <Filter>Engine\Internal\Functionality</Filter>
     </ClInclude>
     <ClInclude Include="Code\BufferManagement.h">
-      <Filter>Engine\Internal</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Buffer.h">
-      <Filter>Engine\Internal</Filter>
+      <Filter>Engine\Internal\Functionality</Filter>
     </ClInclude>
     <ClInclude Include="Code\Flag.h">
-      <Filter>Engine\Internal</Filter>
+      <Filter>Engine\Internal\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Image.h">
+      <Filter>Engine\Internal\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Light.h">
+      <Filter>Engine\Internal\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Mesh.h">
+      <Filter>Engine\Internal\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Model.h">
+      <Filter>Engine\Internal\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Object.h">
+      <Filter>Engine\Internal\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\TexturedQuad.h">
+      <Filter>Engine\Internal\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Vao.h">
+      <Filter>Engine\Internal\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Vertex.h">
+      <Filter>Engine\Internal\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\VertexBufferAttibute.h">
+      <Filter>Engine\Internal\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\VertexBufferLayout.h">
+      <Filter>Engine\Internal\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\VertexShaderAttribute.h">
+      <Filter>Engine\Internal\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Texture.h">
+      <Filter>Engine\Internal\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Buffer.h">
+      <Filter>Engine\Internal\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Material.h">
+      <Filter>Engine\Internal\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Program.h">
+      <Filter>Engine\Internal\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\FrameBuffer.h">
+      <Filter>Engine\Internal\Buffers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
