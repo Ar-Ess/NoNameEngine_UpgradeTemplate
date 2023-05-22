@@ -46,4 +46,9 @@ public:
 	Vao vao;
 	GLuint texture;
 
+	GLuint lightingPassProgram;
+	GLuint textureProgram;
+
+	GLuint textureProgramUniform;
+
 };

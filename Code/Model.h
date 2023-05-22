@@ -33,14 +33,14 @@ public:
 		return change;
 	}
 
-	unsigned int FindVAOForward(unsigned int index, const Program* program)
+	unsigned int FindVAO(unsigned int index, const Program* program)
 	{
 		Mesh* mesh = meshes[index];
 
 		unsigned int size = mesh->vaos.size();
 		for (unsigned int i = 0; i < size; ++i)
 		{
-			if (mesh->vaos[i].programFW == program->handle)
+			if (mesh->vaos[i].program == program->handle)
 				return mesh->vaos[i].handle;
 		}
 
@@ -48,27 +48,7 @@ public:
 		unsigned int vaoHandle = CreateNewVao(program, mesh);
 
 		// Store it in the list of vaos for this mesh
-		mesh->vaos.emplace_back(Vao(vaoHandle, program->handle, true));
-
-		return vaoHandle;
-	}
-
-	unsigned int FindVAODeferred(unsigned int index, const Program* program)
-	{
-		Mesh* mesh = meshes[index];
-
-		unsigned int size = mesh->vaos.size();
-		for (unsigned int i = 0; i < size; ++i)
-		{
-			if (mesh->vaos[i].programDF == program->handle)
-				return mesh->vaos[i].handle;
-		}
-
-		// Create new vao for this mesh/program
-		unsigned int vaoHandle = CreateNewVao(program, mesh);
-
-		// Store it in the list of vaos for this mesh
-		mesh->vaos.emplace_back(Vao(vaoHandle, program->handle, false));
+		mesh->vaos.emplace_back(Vao(vaoHandle, program->handle));
 
 		return vaoHandle;
 	}
@@ -111,6 +91,17 @@ public:
 	}
 
 public:
+
+	// Program list index, if handle needed, do this:
+	// programs[this->forwardProgram]->handle
+	GLuint forwardProgram = 0;
+
+	// Program list index, if handle needed, do this:
+	// programs[this->deferredProgram]->handle
+	GLuint deferredProgram = 0;
+
+	GLuint texUniformForward = 0;
+	GLuint texUniformDeferred = 0;
 
 	std::vector<Mesh*> meshes;
 	std::vector<unsigned int> materials;

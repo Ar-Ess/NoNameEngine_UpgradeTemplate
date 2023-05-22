@@ -108,15 +108,14 @@ public:
 
 	GLuint vertexHandle = 0;
 	GLuint indexHandle = 0;
-	GLuint texUniform = 0;
 
-	// Program list index, if handle needed, do this:
-	// programs[this->forwardProgram]->handle
-	GLuint forwardProgram = 0;
+	//// Program list index, if handle needed, do this:
+	//// programs[this->forwardProgram]->handle
+	//GLuint forwardProgram = 0;
 
-	// Program list index, if handle needed, do this:
-	// programs[this->deferredProgram]->handle
-	GLuint deferredProgram = 0;
+	//// Program list index, if handle needed, do this:
+	//// programs[this->deferredProgram]->handle
+	//GLuint deferredProgram = 0;
 
 	bool active = true;
 

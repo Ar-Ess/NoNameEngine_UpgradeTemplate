@@ -29,26 +29,25 @@ void main()
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
-layout(location=0) out vec3 final;
-layout(location=1) out vec3 specular;
-layout(location=2) out vec3 normals;
-layout(location=3) out vec3 position;
-layout(location=4) out vec3 albedo;
+layout(location=0) out vec4 final;
+layout(location=1) out vec4 specular;
+layout(location=2) out vec4 normals;
+layout(location=3) out vec4 position;
+layout(location=4) out vec4 albedo;
 
 in vec2 vTexCoord;
 in vec3 vPosition;
 in vec3 vNormal;
-in vec3 vViewDir;
 
 uniform sampler2D uTexture;
 
 void main()
 {
-    position = vPosition;
-    normals  = vNormal;
-	albedo = vec3(texture(uTexture, vTexCoord));
-	specular = vec3(0.5);
-	final = albedo;
+	albedo   = vec4(vec3(texture(uTexture, vTexCoord)), 1);
+    normals  = vec4(vNormal,   1);
+    position = vec4(vPosition, 1);
+	specular = vec4(vec3(0.5), 1);
+	final    = albedo;
 }
 
 #endif ///////////////////////////////////////////////

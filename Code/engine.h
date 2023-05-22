@@ -35,6 +35,7 @@ public:
     // Render
     void RenderForward();
     void RenderDeferred();
+    void RenderDeferred2();
     void HotReload();
 
     // Graphics
@@ -89,25 +90,27 @@ public:
     glm::mat4 global = glm::mat4(1.0f);
 
     // Configuration
-    bool deferred = false;
+    bool deferred = true;
     float ambient = 0.1;
     int currentRenderTarget = 0;
     const char* renderTargets[6] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "DEPTH"};
     float depthNear = 0.1;
     float depthFar = 100;
 
-    GLuint CurrentRenderTarget() const
+    GLuint CurrentRenderTarget(bool geometry)
     {
         GLuint ret;
 
+        FrameBuffer* buffer = geometry ? &gBuffer : &frameBuffer;
+
         switch (currentRenderTarget)
         {
-            default: ret = frameBuffer.finalAttachHandle; break;
-            case 1: ret = frameBuffer.specularAttachHandle; break;
-            case 2: ret = frameBuffer.normalsAttachHandle; break;
-            case 3: ret = frameBuffer.positionAttachHandle; break;
-            case 4: ret = frameBuffer.albedoAttachHandle; break;
-            case 5: ret = frameBuffer.depthAttachHandle; break;
+            default: ret = buffer->finalAttachHandle; break;
+            case 1: ret = buffer->specularAttachHandle; break;
+            case 2: ret = buffer->normalsAttachHandle; break;
+            case 3: ret = buffer->positionAttachHandle; break;
+            case 4: ret = buffer->albedoAttachHandle; break;
+            case 5: ret = buffer->depthAttachHandle; break;
         }
 
         return ret;
