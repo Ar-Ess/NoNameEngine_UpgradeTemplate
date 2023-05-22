@@ -72,14 +72,13 @@ void PushAlignedData(Buffer& buffer, const void* data, u32 size, u32 alignment)
     buffer.head += size;
 }
 
-GLuint CreateFrameBufferAttachement(GLuint format, ivec2 display, GLuint type)
+GLuint CreateFrameBufferAttachement(GLuint format, ivec2 display, GLuint type, GLuint internalFormat)
 {
     GLuint glRGBA = GL_RGBA;
     GLuint glDepthComponent = GL_DEPTH_COMPONENT;
     assert((glRGBA == format || glDepthComponent == format) && "Function CreateFrameBufferAttachement(): ATTACHEMENT FORMAT NOT YET IMPLEMENTED");
 
     GLuint handle = 0;
-    GLuint internalFormat = format == GL_RGBA ? GL_RGBA8 : GL_DEPTH_COMPONENT24;
 
     glGenTextures(1, &handle);
     glBindTexture(GL_TEXTURE_2D, handle);
@@ -133,12 +132,12 @@ void InitFrameBuffer(FrameBuffer& buffer)
 FrameBuffer CreateFrameBuffer(ivec2 display)
 {
     FrameBuffer buffer;
-    buffer.albedoAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_UNSIGNED_BYTE);
-    buffer.specularAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_UNSIGNED_BYTE);
-    buffer.normalsAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT);
-    buffer.positionAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT);
-    buffer.finalAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT);
-    buffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display, GL_FLOAT);
+    buffer.albedoAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_UNSIGNED_BYTE, GL_RGB8);
+    buffer.specularAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_UNSIGNED_BYTE, GL_RGB8);
+    buffer.normalsAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT, GL_RGB16F);
+    buffer.positionAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT, GL_RGB16F);
+    buffer.finalAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT, GL_RGB8);
+    buffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display, GL_FLOAT, GL_DEPTH_COMPONENT24);
     InitFrameBuffer(buffer);
 
     return buffer;
