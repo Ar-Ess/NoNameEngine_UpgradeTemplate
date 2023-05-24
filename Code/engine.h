@@ -35,7 +35,6 @@ public:
     // Render
     void RenderForward();
     void RenderDeferred();
-    void RenderDeferred2();
     void HotReload();
 
     // Graphics

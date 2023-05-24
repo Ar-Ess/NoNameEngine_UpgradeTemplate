@@ -179,25 +179,34 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
+    // Create Camera
     app->cam = new Camera(glm::vec3(0, 3, 26), app->displaySize.x/app->displaySize.y, 0.1, 1000);
 
+    // Check Version
     if (GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 3))
         glDebugMessageCallback(OnGlError, app);
 
+    // GL Enables
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // Create Constant Buffers for Uniforms
     app->forwardConstBuffer   = CreateConstantBuffer(app->GetMaxUniformBlockSize());
     app->deferredGConstBuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
     app->deferredLConstBuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
 
+    // Create Frame Buffers
     app->gBuffer     = CreateFrameBuffer(app->displaySize);
     app->frameBuffer = CreateFrameBuffer(app->displaySize);
+
+    // Create TexturedQuads to draw Frame Buffers
     app->deferredQuad  = app->InitTexturedQuad(nullptr, true );
     app->frameQuad     = app->InitTexturedQuad(nullptr, false);
 
+    // Generate Initial Screen
+    //return; //<- Uncomment this for empty initial scene
     app->InitModel("Patrick/Patrick.obj", vec3( 0, 1.5, 20), 0.4);
     app->InitModel("Patrick/Patrick.obj", vec3(-7,   0,  5));
     app->InitModel("Patrick/Patrick.obj", vec3( 6,   3, -2));
@@ -603,7 +612,6 @@ void Render(App* app)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     if (!app->deferred) app->RenderForward();
-    //else app->RenderDeferred2();
     else app->RenderDeferred();
 }
 
@@ -773,153 +781,6 @@ void App::RenderForward()
         // Unuse the program used
         glUseProgram(0);
     }
-}
-
-void App::RenderDeferred2()
-{
-    // Forward Frame Buffer
-    {
-        // Bind the buffer
-        glBindFramebuffer(GL_FRAMEBUFFER, gBuffer.handle);
-
-        glClearColor(0, 0, 0, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Uniforms
-        {
-            // Fill Uniform Buffer once per update
-            BindBuffer(deferredGConstBuffer);
-            MapBuffer(deferredGConstBuffer, GL_WRITE_ONLY);
-
-            // -- Local Parameters
-            u32 localParamsFullSize = 0;
-            for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
-            {
-                Object* o = (*it);
-                if (o->Type() == ObjectType::O_LIGHT) continue;
-
-                AlignHead(deferredGConstBuffer, GetUniformBlockAlignment());
-
-                o->localParamsOffset = deferredGConstBuffer.head;
-                PushMat4(deferredGConstBuffer, o->world);
-                PushMat4(deferredGConstBuffer, GlobalMatrix(o->world));
-
-                o->localParamsSize = deferredGConstBuffer.head - o->localParamsOffset;
-                localParamsFullSize += o->localParamsSize;
-            }
-
-            UnmapBuffer(deferredGConstBuffer);
-            UnbindBuffer(deferredGConstBuffer);
-            ///////////////////
-        }
-
-        // Draw 3D Geometry
-        for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
-        {
-            Object* o = (*it);
-            if (!o->active) continue;
-
-            switch (o->Type())
-            {
-            case ObjectType::O_TEXTURED_QUAD:
-            {
-                TexturedQuad* tQ = (TexturedQuad*)o;
-                // Get & Set the program to be used
-                glUseProgram(programs[tQ->textureProgram]->handle);
-                // Bind the vao vertex array
-                glBindVertexArray(tQ->vao.handle);
-
-                // Send the texture as uniform variable to glsl script
-                glUniform1i(tQ->textureProgramUniform, 0);
-                // Activate slot for a texture
-                glActiveTexture(GL_TEXTURE0);
-
-                // Bind the texture of the dice
-                glBindTexture(GL_TEXTURE_2D, textures[tQ->texture]->handle);
-
-                // Draw the elements to the screen
-                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-                // Unbind the vertex array
-                glBindVertexArray(0);
-                // Unuse the program used
-                glUseProgram(0);
-
-                break;
-            }
-
-            case ObjectType::O_MODEL:
-            {
-                Model* m = (Model*)o;
-
-                BindBufferRange(deferredGConstBuffer, BINDING(1), o->localParamsOffset, o->localParamsSize); // Binding Local Params
-
-                glUseProgram(programs[m->deferredProgram]->handle);
-
-                unsigned int size = m->meshes.size();
-                for (u32 i = 0; i < size; ++i)
-                {
-                    GLuint vao = m->FindVAO(i, programs[m->deferredProgram]);
-                    glBindVertexArray(vao);
-
-                    Material* mat = materials[m->materials[i]];
-
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, textures[mat->diffuseTex]->handle);
-                    glUniform1i(m->texUniformDeferred, 0);
-
-                    Mesh* mesh = m->meshes[i];
-                    glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
-
-                    glBindVertexArray(0);
-                }
-
-                glUseProgram(0);
-
-                break;
-            }
-
-            default: break;
-            }
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    {}
-
-    // Draw Frame Buffer
-    {
-    // Get & Set the program to be used
-    glUseProgram(programs[frameQuad->textureProgram]->handle);
-
-    // Bind the vao vertex array
-    glBindVertexArray(frameQuad->vao.handle);
-
-    // Send the texture as uniform variable to glsl script
-    glUniform1i(frameQuad->textureProgramUniform, 0);
-    // Activate slot for a texture
-    glActiveTexture(GL_TEXTURE0);
-
-    // Bind the texture of the dice
-    glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget(true));
-
-    // Draw the elements to the screen
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-    // Unbind the vertex array
-    glBindVertexArray(0);
-
-    // Unuse the program used
-    glUseProgram(0);
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer.handle);
-
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void App::RenderDeferred()
