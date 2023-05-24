@@ -1084,10 +1084,17 @@ void App::RenderDeferred()
             ///////////////////
         }
 
-        glUseProgram(programs[deferredQuad->lightingPassProgram]->handle);
+        GLuint pHandle = programs[deferredQuad->lightingPassProgram]->handle;
+        glUseProgram(pHandle);
 
         // Bind the vao vertex array
         glBindVertexArray(deferredQuad->vao.handle);
+
+        glUniform1i(glGetUniformLocation(pHandle, "gFinal"),    0);
+        glUniform1i(glGetUniformLocation(pHandle, "gSpecular"), 1);
+        glUniform1i(glGetUniformLocation(pHandle, "gNormals"),  2);
+        glUniform1i(glGetUniformLocation(pHandle, "gPosition"), 3);
+        glUniform1i(glGetUniformLocation(pHandle, "gAlbedo"),   4);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, gBuffer.finalAttachHandle);

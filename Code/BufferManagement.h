@@ -122,7 +122,14 @@ void InitFrameBuffer(FrameBuffer& buffer)
         }
     }
 
-    GLenum draw[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
+    GLenum draw[] = { 
+        GL_COLOR_ATTACHMENT0, 
+        GL_COLOR_ATTACHMENT1, 
+        GL_COLOR_ATTACHMENT2, 
+        GL_COLOR_ATTACHMENT3, 
+        GL_COLOR_ATTACHMENT4
+    };
+
     glDrawBuffers(ARRAY_COUNT(draw), draw);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
