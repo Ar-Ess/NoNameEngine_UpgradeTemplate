@@ -41,6 +41,17 @@ in vec3 vNormal;
 
 uniform sampler2D uTexture;
 
+float ComputeDepth()
+{
+	float depth = gl_FragCoord.z;
+	float near = 0.1;
+	float far = 100;
+
+	float z = depth * 2.0 - 1.0; // back to NDC 
+    float endDepth = (2.0 * near * far) / (far + near - z * (far - near));
+	return endDepth / far;
+}
+
 void main()
 {
 	albedo   = vec4(vec3(texture(uTexture, vTexCoord)), 1);
@@ -48,6 +59,7 @@ void main()
     position = vec4(vPosition, 1);
 	specular = vec4(vec3(0.5), 1);
 	final    = albedo;
+	gl_FragDepth = ComputeDepth();
 }
 
 #endif ///////////////////////////////////////////////

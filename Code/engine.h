@@ -97,20 +97,20 @@ public:
     float depthNear = 0.1;
     float depthFar = 100;
 
-    GLuint CurrentRenderTarget(bool geometry)
+    GLuint CurrentRenderTarget(bool geometryDepth)
     {
         GLuint ret;
 
-        FrameBuffer* buffer = geometry ? &gBuffer : &frameBuffer;
+        FrameBuffer* buffer = geometryDepth ? &gBuffer : &frameBuffer;
 
         switch (currentRenderTarget)
         {
-            default: ret = buffer->finalAttachHandle; break;
-            case 1: ret = buffer->specularAttachHandle; break;
-            case 2: ret = buffer->normalsAttachHandle; break;
-            case 3: ret = buffer->positionAttachHandle; break;
-            case 4: ret = buffer->albedoAttachHandle; break;
-            case 5: ret = buffer->depthAttachHandle; break;
+            default: ret = frameBuffer.finalAttachHandle; break;
+            case 1:  ret = frameBuffer.specularAttachHandle; break;
+            case 2:  ret = frameBuffer.normalsAttachHandle; break;
+            case 3:  ret = frameBuffer.positionAttachHandle; break;
+            case 4:  ret = frameBuffer.albedoAttachHandle; break;
+            case 5:  ret = buffer->depthAttachHandle; break;
         }
 
         return ret;

@@ -152,7 +152,7 @@ void main()
 	vPosition = vec3(position);
 	vViewDir  = normalize(uCameraPosition - vPosition);
 
-	gl_FragDepth = ComputeDepth();
+	//gl_FragDepth = ComputeDepth();
 
 	vec3 color = vec3(0);
 	bool anyLightActive = false;

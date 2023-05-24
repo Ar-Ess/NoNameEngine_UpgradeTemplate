@@ -1133,7 +1133,7 @@ void App::RenderDeferred()
         glActiveTexture(GL_TEXTURE0);
 
         // Bind the texture of the dice
-        glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget(false));
+        glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget(true));
 
         // Draw the elements to the screen
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
