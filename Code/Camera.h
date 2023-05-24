@@ -1,4 +1,6 @@
 #pragma once
+#include "Typedef.h"
+#include <glm/gtx/transform.hpp>
 
 class Camera
 {

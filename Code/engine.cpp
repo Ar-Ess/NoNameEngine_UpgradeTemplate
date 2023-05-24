@@ -1,10 +1,13 @@
 #include "engine.h"
 #include "TexturedQuad.h"
-#include "Model.h"
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include "AssimpLoading.h"
+#include <glm/gtc/type_ptr.hpp>
 #include "BufferManagement.h"
+#include "Light.h"
+#include "Texture.h"
+#include "Camera.h"
 
 #define BINDING(b) b
 #define ALIGN(value, alignment) (value + alignment - 1) & ~(alignment - 1)
@@ -202,8 +205,7 @@ void Init(App* app)
     app->frameBuffer = CreateFrameBuffer(app->displaySize);
 
     // Create TexturedQuads to draw Frame Buffers
-    app->deferredQuad  = app->InitTexturedQuad(nullptr, true );
-    app->frameQuad     = app->InitTexturedQuad(nullptr, false);
+    app->frameQuad   = app->InitTexturedQuad(nullptr);
 
     // Generate Initial Screen
     //return; //<- Uncomment this for empty initial scene
@@ -220,7 +222,7 @@ void Init(App* app)
     app->AddSpotLight  (glm::vec3(  0,   1,    1), glm::vec3(    6,   10,  -1), glm::vec3(0, -1, 0), 18)->intensity = 1.5;
 }
 
-TexturedQuad* App::InitTexturedQuad(const char* texture, bool lighting, glm::vec3 position)
+TexturedQuad* App::InitTexturedQuad(const char* texture, glm::vec3 position)
 {
     const Vertex vertex[] = {
         Vertex(-1.f, -1.f, 0.0f, 0.0f, 0.0f),
@@ -283,19 +285,18 @@ TexturedQuad* App::InitTexturedQuad(const char* texture, bool lighting, glm::vec
     // Tancar el binding del vao (no cal tancar els de dins, ja es tenquen)
     glBindVertexArray(0);
 
-    if (!lighting)
-    {
-        quad->textureProgram = LoadProgram(this, "TextureShader.glsl", "TEXTURED_GEOMETRY");
-        Program& texturedGeometryProgram = *programs[quad->textureProgram];
-        quad->textureProgramUniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
-    }
-    else quad->lightingPassProgram = LoadProgram(this, "LightingPassShader.glsl", "LIGHTING_PASS");
-
     if (texture != nullptr)
     {
         quad->texture = LoadTexture2D(this, texture);
         objects.emplace_back(quad);
         quad->name = "Quad";
+    }
+    else
+    {
+        quad->textureProgram = LoadProgram(this, "TextureShader.glsl", "TEXTURED_GEOMETRY");
+        Program& texturedGeometryProgram = *programs[quad->textureProgram];
+        quad->textureProgramUniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
+        quad->lightingPassProgram = LoadProgram(this, "LightingPassShader.glsl", "LIGHTING_PASS");
     }
     
     return quad;
@@ -407,6 +408,12 @@ void App::DeleteObject(intptr_t selected)
     objects.erase(objects.begin() + index);
     delete o;
 
+}
+
+glm::mat4 App::GlobalMatrix(glm::mat4 world)
+{
+    global = cam->projection * cam->view * world;
+    return global;
 }
 
 void Update(App* app)
@@ -770,7 +777,7 @@ void App::RenderForward()
         glActiveTexture(GL_TEXTURE0);
 
         // Bind the texture of the dice
-        glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget(false));
+        glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget());
 
         // Draw the elements to the screen
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
@@ -799,13 +806,6 @@ void App::RenderDeferred()
             BindBuffer(deferredGConstBuffer);
             MapBuffer(deferredGConstBuffer, GL_WRITE_ONLY);
 
-            // -- Global Parameters
-            u32 globalParamsOffset = deferredGConstBuffer.head;
-            PushFloat(deferredGConstBuffer, depthNear);
-            PushFloat(deferredGConstBuffer, depthFar);
-
-            u32 globalParamsSize = deferredGConstBuffer.head - globalParamsOffset;
-
             // -- Local Parameters
             u32 localParamsFullSize = 0;
             for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
@@ -825,8 +825,6 @@ void App::RenderDeferred()
 
             UnmapBuffer(deferredGConstBuffer);
             UnbindBuffer(deferredGConstBuffer);
-
-            BindBufferRange(deferredGConstBuffer, BINDING(0), 0, globalParamsSize); // Binding Global Params
 
             ///////////////////
         }
@@ -954,17 +952,18 @@ void App::RenderDeferred()
             ///////////////////
         }
 
-        GLuint pHandle = programs[deferredQuad->lightingPassProgram]->handle;
+        GLuint pHandle = programs[frameQuad->lightingPassProgram]->handle;
         glUseProgram(pHandle);
 
         // Bind the vao vertex array
-        glBindVertexArray(deferredQuad->vao.handle);
+        glBindVertexArray(frameQuad->vao.handle);
 
         glUniform1i(glGetUniformLocation(pHandle, "gFinal"),    0);
         glUniform1i(glGetUniformLocation(pHandle, "gSpecular"), 1);
         glUniform1i(glGetUniformLocation(pHandle, "gNormals"),  2);
         glUniform1i(glGetUniformLocation(pHandle, "gPosition"), 3);
         glUniform1i(glGetUniformLocation(pHandle, "gAlbedo"),   4);
+        glUniform1i(glGetUniformLocation(pHandle, "gDepth"),    5);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, gBuffer.finalAttachHandle);
@@ -976,6 +975,8 @@ void App::RenderDeferred()
         glBindTexture(GL_TEXTURE_2D, gBuffer.positionAttachHandle);
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, gBuffer.albedoAttachHandle);
+        glActiveTexture(GL_TEXTURE5);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.depthAttachHandle);
 
         // Draw the elements to the screen
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
@@ -1003,7 +1004,7 @@ void App::RenderDeferred()
         glActiveTexture(GL_TEXTURE0);
 
         // Bind the texture of the dice
-        glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget(true));
+        glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget());
 
         // Draw the elements to the screen
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);

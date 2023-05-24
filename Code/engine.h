@@ -1,12 +1,7 @@
 #pragma once
 
 #include "platform.h"
-#include "Object.h"
-#include "Material.h"
-#include "Texture.h"
-#include "Program.h"
-#include "Camera.h"
-#include "Light.h"
+#include <glad/glad.h>
 #include "Image.h"
 #include "Vertex.h"
 #include "Buffer.h"
@@ -14,8 +9,13 @@
 #include "OpenGlInfo.h"
 #include "FrameBuffer.h"
 
+class Texture;
+class Program;
+class Object;
+class Material;
 class TexturedQuad;
 class Light;
+class Camera;
 
 class App
 {
@@ -23,7 +23,7 @@ public:
 
     // Loop
     float deltaTime = 0;
-    bool isRunning;
+    bool isRunning = false;
 
     // Input
     Input input;
@@ -39,7 +39,7 @@ public:
 
     // Graphics
     OpenGLInfo openGLInformation;
-    ivec2 displaySize;
+    ivec2 displaySize = {0, 0};
 
     // Vectors
     std::vector<Texture*> textures;
@@ -49,7 +49,7 @@ public:
     std::vector<Light*> lights;
 
     intptr_t selected = 0;
-    TexturedQuad* InitTexturedQuad(const char* texture, bool forward, glm::vec3 position = glm::vec3(0.f));
+    TexturedQuad* InitTexturedQuad(const char* texture, glm::vec3 position = glm::vec3(0.f));
     void InitModel(const char* path, glm::vec3 position = glm::vec3(0.f), float scale = 1);
     Light* AddPointLight(glm::vec3 color, glm::vec3 position);
     Light* AddDirectLight(glm::vec3 color, glm::vec3 direction);
@@ -77,14 +77,9 @@ public:
     Buffer      deferredGConstBuffer;
     Buffer      deferredLConstBuffer;
     TexturedQuad* frameQuad = nullptr;
-    TexturedQuad* deferredQuad = nullptr;
 
     // Camera
-    glm::mat4 GlobalMatrix(glm::mat4 world)
-    {
-        global = cam->projection * cam->view * world;
-        return global;
-    }
+    glm::mat4 GlobalMatrix(glm::mat4 world);
     Camera* cam = nullptr;
     glm::mat4 global = glm::mat4(1.0f);
 
@@ -96,11 +91,9 @@ public:
     float depthNear = 0.1;
     float depthFar = 100;
 
-    GLuint CurrentRenderTarget(bool geometryDepth)
+    GLuint CurrentRenderTarget()
     {
         GLuint ret;
-
-        FrameBuffer* buffer = geometryDepth ? &gBuffer : &frameBuffer;
 
         switch (currentRenderTarget)
         {
@@ -109,7 +102,7 @@ public:
             case 2:  ret = frameBuffer.normalsAttachHandle; break;
             case 3:  ret = frameBuffer.positionAttachHandle; break;
             case 4:  ret = frameBuffer.albedoAttachHandle; break;
-            case 5:  ret = buffer->depthAttachHandle; break;
+            case 5:  ret = frameBuffer.depthAttachHandle; break;
         }
 
         return ret;

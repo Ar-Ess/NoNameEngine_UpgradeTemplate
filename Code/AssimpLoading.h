@@ -4,6 +4,7 @@
 #include <assimp/postprocess.h>
 #include "Model.h"
 #include "engine.h"
+#include "Material.h"
 
 void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Model* myModel, unsigned int baseMeshMaterialIndex, std::vector<unsigned int>& submeshMaterialIndices)
 {

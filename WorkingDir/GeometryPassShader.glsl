@@ -19,12 +19,6 @@ out vec2 vTexCoord;
 out vec3 vPosition;
 out vec3 vNormal;
 
-layout(binding = 0, std140) uniform GlobalParams
-{
-	float near;
-	float far;
-};
-
 void main()
 {
 	vTexCoord   = aTexCoord;
@@ -47,23 +41,6 @@ in vec3 vNormal;
 
 uniform sampler2D uTexture;
 
-layout(binding = 0, std140) uniform GlobalParams
-{
-	float near;
-	float far;
-};
-
-float ComputeDepth()
-{
-	float depth = gl_FragCoord.z;
-	//float near = 0.1;
-	//float far = 100;
-
-	float z = depth * 2.0 - 1.0; // back to NDC 
-    float endDepth = (2.0 * near * far) / (far + near - z * (far - near));
-	return endDepth / far;
-}
-
 void main()
 {
 	albedo   = vec4(vec3(texture(uTexture, vTexCoord)), 1);
@@ -71,7 +48,7 @@ void main()
     position = vec4(vPosition, 1);
 	specular = vec4(vec3(0.5), 1);
 	final    = albedo;
-	gl_FragDepth = ComputeDepth();
+	gl_FragDepth = gl_FragCoord.z;
 }
 
 #endif ///////////////////////////////////////////////

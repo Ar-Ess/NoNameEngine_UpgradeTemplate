@@ -45,6 +45,7 @@ uniform sampler2D gSpecular;
 uniform sampler2D gNormals;
 uniform sampler2D gPosition;
 uniform sampler2D gAlbedo;
+uniform sampler2D gDepth;
 
 layout(location=0) out vec4 final;
 layout(location=1) out vec4 specular;
@@ -132,10 +133,8 @@ vec3 SpotLight(in Light light, in vec3 texColor)
 	return ret * texColor;
 }
 
-float ComputeDepth()
+float ComputeDepth(float depth)
 {
-	float depth = gl_FragCoord.z;
-
 	float z = depth * 2.0 - 1.0; // back to NDC 
     float endDepth = (2.0 * near * far) / (far + near - z * (far - near));
 	return endDepth / far;
@@ -147,6 +146,7 @@ void main()
 	specular = texture(gSpecular, vTexCoord);
 	normals  = texture(gNormals , vTexCoord);
 	position = texture(gPosition, vTexCoord);
+	gl_FragDepth = ComputeDepth(texture(gDepth, vTexCoord).x);
 
 	vNormal   = vec3(normals);
 	vPosition = vec3(position);

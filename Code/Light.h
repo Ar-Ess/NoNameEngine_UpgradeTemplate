@@ -8,8 +8,9 @@ enum class LightType
 	LT_SPOT
 };
 
-struct Light : public Object
+class Light : public Object
 {
+public:
 
 	Light(LightType type, glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff) : 
 		type(type), color(color), direction(glm::normalize(direction)), cutoff(cutoff), Object(ObjectType::O_LIGHT)
