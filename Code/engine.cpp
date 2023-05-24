@@ -938,6 +938,13 @@ void App::RenderDeferred()
             BindBuffer(deferredGConstBuffer);
             MapBuffer(deferredGConstBuffer, GL_WRITE_ONLY);
 
+            // -- Global Parameters
+            u32 globalParamsOffset = deferredGConstBuffer.head;
+            PushFloat(deferredGConstBuffer, depthNear);
+            PushFloat(deferredGConstBuffer, depthFar);
+
+            u32 globalParamsSize = deferredGConstBuffer.head - globalParamsOffset;
+
             // -- Local Parameters
             u32 localParamsFullSize = 0;
             for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
@@ -957,6 +964,8 @@ void App::RenderDeferred()
 
             UnmapBuffer(deferredGConstBuffer);
             UnbindBuffer(deferredGConstBuffer);
+
+            BindBufferRange(deferredGConstBuffer, BINDING(0), 0, globalParamsSize); // Binding Global Params
 
             ///////////////////
         }
