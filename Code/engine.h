@@ -33,6 +33,7 @@ public:
     void GUI();
 
     // Render
+    void RenderFrame();
     void RenderForward();
     void RenderDeferred();
     void HotReload();
