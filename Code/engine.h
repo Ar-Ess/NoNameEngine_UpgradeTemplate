@@ -88,7 +88,11 @@ public:
     bool deferred = true;
     float ambient = 0.1;
     int currentRenderTarget = 0;
-    const char* renderTargets[6] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "DEPTH"};
+    const char* renderTargets[7] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "LIGHT", "DEPTH"};
+    // LIGHT
+    float threshold = 1;
+    bool blackwhite = false;
+    // DEPTH
     float depthNear = 0.1;
     float depthFar = 100;
 
@@ -103,7 +107,8 @@ public:
             case 2:  ret = frameBuffer.normalsAttachHandle; break;
             case 3:  ret = frameBuffer.positionAttachHandle; break;
             case 4:  ret = frameBuffer.albedoAttachHandle; break;
-            case 5:  ret = frameBuffer.depthAttachHandle; break;
+            case 5:  ret = frameBuffer.lightAttachHandle; break;
+            case 6:  ret = frameBuffer.depthAttachHandle; break;
         }
 
         return ret;

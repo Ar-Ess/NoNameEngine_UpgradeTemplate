@@ -486,13 +486,21 @@ void App::GUI()
             ImGui::Combo("##target", &currentRenderTarget, renderTargets, ARRAY_COUNT(renderTargets));
             ImGui::PopItemWidth();
 
-            if (currentRenderTarget == 5)
+            if (renderTargets[currentRenderTarget] == "DEPTH")
             {
                 ImGui::Dummy(ImVec2(20, 0)); ImGui::SameLine();
                 ImGui::PushItemWidth(83);
                 ImGui::DragFloat("##near", &depthNear, 0.1f, 0.1f, 999999.f, "Near: %.1f"); ImGui::SameLine();
                 ImGui::DragFloat("##far", &depthFar, 0.1f, 0.1f, 999999.f, "Far: %.1f");
                 ImGui::PopItemWidth();
+            }
+            else if (renderTargets[currentRenderTarget] == "LIGHT")
+            {
+                ImGui::Dummy(ImVec2(20, 0)); ImGui::SameLine();
+                ImGui::PushItemWidth(120);
+                ImGui::DragFloat("##threshold", &threshold, 0.1f, 0, 3, "Thresh: %.1f"); ImGui::SameLine();
+                ImGui::PopItemWidth();
+                ImGui::Checkbox("B&W", &blackwhite);
             }
 
             ImGui::EndMenu();
@@ -671,11 +679,13 @@ void App::RenderForward()
 
             // -- Global Parameters
             u32 globalParamsOffset = forwardConstBuffer.head;
-            PushVec3(forwardConstBuffer, cam->Position());
+            PushVec3 (forwardConstBuffer, cam->Position());
             PushFloat(forwardConstBuffer, ambient);
             PushFloat(forwardConstBuffer, depthNear);
             PushFloat(forwardConstBuffer, depthFar);
-            PushUInt(forwardConstBuffer, lights.size());
+            PushFloat(forwardConstBuffer, threshold);
+            PushUInt (forwardConstBuffer, blackwhite);
+            PushUInt (forwardConstBuffer, lights.size());
 
             for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
             {
@@ -926,11 +936,13 @@ void App::RenderDeferred()
 
             // -- Global Parameters
             u32 globalParamsOffset = deferredLConstBuffer.head;
-            PushVec3(deferredLConstBuffer, cam->Position());
+            PushVec3 (deferredLConstBuffer, cam->Position());
             PushFloat(deferredLConstBuffer, ambient);
             PushFloat(deferredLConstBuffer, depthNear);
             PushFloat(deferredLConstBuffer, depthFar);
-            PushUInt(deferredLConstBuffer, lights.size());
+            PushFloat(deferredLConstBuffer, threshold);
+            PushUInt (deferredLConstBuffer, blackwhite);
+            PushUInt (deferredLConstBuffer, lights.size());
 
             for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
             {

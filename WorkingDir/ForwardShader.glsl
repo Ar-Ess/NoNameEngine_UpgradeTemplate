@@ -35,6 +35,8 @@ layout(binding = 0, std140) uniform GlobalParams
 	float ambient;
 	float near;
 	float far;
+	float threshold;
+	bool blackwhite;
 	uint uLightCount;
 	Light uLight[16];
 };
@@ -79,6 +81,8 @@ layout(binding = 0, std140) uniform GlobalParams
 	float ambient;
 	float near;
 	float far;
+	float threshold;
+	bool blackwhite;
 	uint uLightCount;
 	Light uLight[16];
 };
@@ -88,6 +92,7 @@ layout(location=1) out vec4 specular;
 layout(location=2) out vec4 normals;
 layout(location=3) out vec4 position;
 layout(location=4) out vec4 albedo;
+layout(location=5) out vec4 light;
 
 vec3 DirectionalLight(in Light light, in vec3 texColor)
 {
@@ -163,6 +168,8 @@ float ComputeDepth()
 	return endDepth / far;
 }
 
+float max3(vec3 v) { return max(max(v.x, v.y), v.z); }
+
 void main()
 {
 	albedo = texture(uTexture, vTexCoord);
@@ -188,6 +195,10 @@ void main()
 			case 3: color += SpotLight(light, vec3(albedo)); break;
 		}
 	}
+
+	vec3 lightOnly = max(color/vec3(albedo) - vec3(threshold), 0);
+	if (blackwhite) lightOnly = vec3(max3(lightOnly));
+	light = vec4(lightOnly, 1);
 
 	if (!anyLightActive) color += (ambient * vec3(1)) * vec3(albedo);
 
