@@ -13,14 +13,15 @@ struct Light
 	float outerCutoff;
 	float intensity;
 	bool isActive;
+	float bloomThreshold;
 };
 
-struct Material
-{
-	float diffuse;
-	float specular;
-	float shininess;
-};
+//struct Material
+//{
+//	float diffuse;
+//	float specular;
+//	float shininess;
+//};
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
@@ -72,9 +73,6 @@ in vec3 vViewDir;
 // sending the texture data glUniform1i(app->programUniformTexture, 0);
 uniform sampler2D uTexture;
 
-uniform Material uMaterial;
-
-
 layout(binding = 0, std140) uniform GlobalParams
 {
 	vec3 uCameraPosition;
@@ -93,6 +91,7 @@ layout(location=2) out vec4 normals;
 layout(location=3) out vec4 position;
 layout(location=4) out vec4 albedo;
 layout(location=5) out vec4 light;
+layout(location=6) out vec4 bloom;
 
 vec3 DirectionalLight(in Light light, in vec3 texColor)
 {
@@ -170,6 +169,13 @@ float ComputeDepth()
 
 float max3(vec3 v) { return max(max(v.x, v.y), v.z); }
 
+vec4 CalculateLightOnly(float thrhld, vec3 clr)
+{
+	vec3 lightOnly = max(clr/vec3(albedo) - vec3(thrhld), 0);
+	if (blackwhite) lightOnly = vec3(max3(lightOnly));
+	return vec4(lightOnly, 1);
+}
+
 void main()
 {
 	albedo = texture(uTexture, vTexCoord);
@@ -186,19 +192,21 @@ void main()
 	{
 		if (!uLight[i].isActive) continue;
 		Light light = uLight[i];
+		vec3 result = vec3(0);
 		anyLightActive = true;
 
 		switch(light.type)
 		{
-			case 1: color += DirectionalLight(light, vec3(albedo)); break;
-			case 2: color += PointLight(light, vec3(albedo)); break;
-			case 3: color += SpotLight(light, vec3(albedo)); break;
+			case 1: result += DirectionalLight(light, vec3(albedo)); break;
+			case 2: result += PointLight(light, vec3(albedo)); break;
+			case 3: result += SpotLight(light, vec3(albedo)); break;
 		}
+
+		bloom += CalculateLightOnly(light.bloomThreshold, result);
+		color += result;
 	}
 
-	vec3 lightOnly = max(color/vec3(albedo) - vec3(threshold), 0);
-	if (blackwhite) lightOnly = vec3(max3(lightOnly));
-	light = vec4(lightOnly, 1);
+	light = CalculateLightOnly(threshold, color);
 
 	if (!anyLightActive) color += (ambient * vec3(1)) * vec3(albedo);
 

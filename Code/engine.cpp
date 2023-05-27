@@ -700,6 +700,7 @@ void App::RenderForward()
                 PushFloat(forwardConstBuffer, l->OuterCuttoff());
                 PushFloat(forwardConstBuffer, l->intensity);
                 PushBool(forwardConstBuffer, l->active);
+                PushFloat(forwardConstBuffer, l->bloomThreshold);
             }
 
             u32 globalParamsSize = forwardConstBuffer.head - globalParamsOffset;
