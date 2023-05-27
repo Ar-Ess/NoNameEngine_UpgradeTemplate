@@ -684,7 +684,7 @@ void App::RenderForward()
             PushFloat(forwardConstBuffer, depthNear);
             PushFloat(forwardConstBuffer, depthFar);
             PushFloat(forwardConstBuffer, threshold);
-            PushUInt (forwardConstBuffer, blackwhite);
+            PushBool (forwardConstBuffer, blackwhite);
             PushUInt (forwardConstBuffer, lights.size());
 
             for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
@@ -699,7 +699,7 @@ void App::RenderForward()
                 PushFloat(forwardConstBuffer, l->Cutoff());
                 PushFloat(forwardConstBuffer, l->OuterCuttoff());
                 PushFloat(forwardConstBuffer, l->intensity);
-                PushUInt(forwardConstBuffer, l->active);
+                PushBool(forwardConstBuffer, l->active);
             }
 
             u32 globalParamsSize = forwardConstBuffer.head - globalParamsOffset;
@@ -941,7 +941,7 @@ void App::RenderDeferred()
             PushFloat(deferredLConstBuffer, depthNear);
             PushFloat(deferredLConstBuffer, depthFar);
             PushFloat(deferredLConstBuffer, threshold);
-            PushUInt (deferredLConstBuffer, blackwhite);
+            PushBool (deferredLConstBuffer, blackwhite);
             PushUInt (deferredLConstBuffer, lights.size());
 
             for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
@@ -956,7 +956,8 @@ void App::RenderDeferred()
                 PushFloat(deferredLConstBuffer, l->Cutoff());
                 PushFloat(deferredLConstBuffer, l->OuterCuttoff());
                 PushFloat(deferredLConstBuffer, l->intensity);
-                PushUInt(deferredLConstBuffer, l->active);
+                PushBool(deferredLConstBuffer, l->active);
+                PushFloat(deferredLConstBuffer, l->bloomThreshold);
             }
 
             u32 globalParamsSize = deferredLConstBuffer.head - globalParamsOffset;

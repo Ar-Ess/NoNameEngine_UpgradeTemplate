@@ -52,6 +52,11 @@ public:
 			Draw3Float("Color:", &color, 0.01, 0, 1, "R: %.2f", "G: %.2f", "B: %.2f");
 		}
 
+		if (ImGui::CollapsingHeader("Bloom"))
+		{
+			DrawFloat("Threshold:", &bloomThreshold, 0.01, 0.1, 3);
+		}
+
 		return change;
 	}
 
@@ -70,6 +75,7 @@ public:
 	glm::vec3 color = glm::vec3(1, 1, 1);
 	glm::vec3 direction;
 	float intensity = 1;
+	float bloomThreshold = 0.5;
 
 private:
 

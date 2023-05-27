@@ -8,6 +8,7 @@ struct FrameBuffer
     GLuint positionAttachHandle = 0;
     GLuint depthAttachHandle = 0;
     GLuint lightAttachHandle = 0;
+    GLuint bloomAttachHandle = 0;
 
     GLuint finalAttachHandle = 0;
 

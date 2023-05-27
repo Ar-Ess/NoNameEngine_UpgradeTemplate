@@ -104,6 +104,7 @@ void InitFrameBuffer(FrameBuffer& buffer)
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, buffer.positionAttachHandle, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, buffer.albedoAttachHandle,   0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, buffer.lightAttachHandle,    0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT6, buffer.bloomAttachHandle,    0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  buffer.depthAttachHandle,    0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -129,7 +130,8 @@ void InitFrameBuffer(FrameBuffer& buffer)
         GL_COLOR_ATTACHMENT2, 
         GL_COLOR_ATTACHMENT3, 
         GL_COLOR_ATTACHMENT4,
-        GL_COLOR_ATTACHMENT5
+        GL_COLOR_ATTACHMENT5,
+        GL_COLOR_ATTACHMENT6
     };
 
     glDrawBuffers(ARRAY_COUNT(draw), draw);
@@ -147,6 +149,7 @@ FrameBuffer CreateFrameBuffer(ivec2 display)
     buffer.positionAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT, GL_RGB16F);
     buffer.finalAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT, GL_RGB8);
     buffer.lightAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT, GL_RGB8);
+    buffer.bloomAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT, GL_RGB8);
     buffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display, GL_FLOAT, GL_DEPTH_COMPONENT24);
     InitFrameBuffer(buffer);
 
@@ -209,6 +212,7 @@ FrameBuffer CreateGeometryBuffer(ivec2 display)
 
 #define PushData(buffer, data, size) PushAlignedData(buffer, data, size, 1)
 #define PushUInt(buffer, value) { u32 v = value; PushAlignedData(buffer, &v, sizeof(v), 4); }
+#define PushBool(buffer, value) { bool v = value; PushAlignedData(buffer, &v, sizeof(v), 4); }
 #define PushFloat(buffer, value) { float v = value; PushAlignedData(buffer, &v, sizeof(v), 4); }
 #define PushVec3(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(vec4))
 #define PushVec4(buffer, value) PushAlignedData(buffer, value_ptr(value), sizeof(value), sizeof(vec4))

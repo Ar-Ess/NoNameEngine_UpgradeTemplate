@@ -12,7 +12,7 @@ struct Light
 	float cutoff;
 	float outerCutoff;
 	float intensity;
-	uint isActive;
+	bool isActive;
 };
 
 struct Material
@@ -184,7 +184,7 @@ void main()
 
 	for (uint i = 0; i < uLightCount; ++i)
 	{
-		if (uLight[i].isActive == 0) continue;
+		if (!uLight[i].isActive) continue;
 		Light light = uLight[i];
 		anyLightActive = true;
 
