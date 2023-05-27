@@ -29,11 +29,10 @@ void main()
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
-layout(location=0) out vec4 final;
-layout(location=1) out vec4 specular;
-layout(location=2) out vec4 normals;
-layout(location=3) out vec4 position;
-layout(location=4) out vec4 albedo;
+layout(location=0) out vec4 specular;
+layout(location=1) out vec4 normals;
+layout(location=2) out vec4 position;
+layout(location=3) out vec4 albedo;
 
 in vec2 vTexCoord;
 in vec3 vPosition;
@@ -47,7 +46,6 @@ void main()
     normals  = vec4(vNormal,   1);
     position = vec4(vPosition, 1);
 	specular = vec4(vec3(0.5), 1);
-	final    = albedo;
 	gl_FragDepth = gl_FragCoord.z;
 }
 

@@ -150,6 +150,60 @@ FrameBuffer CreateFrameBuffer(ivec2 display)
     return buffer;
 }
 
+void InitGeometryBuffer(FrameBuffer& buffer)
+{
+    GLuint handle = 0;
+    glGenFramebuffers(1, &handle);
+    glBindFramebuffer(GL_FRAMEBUFFER, handle);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer.specularAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, buffer.normalsAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, buffer.positionAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, buffer.albedoAttachHandle, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, buffer.depthAttachHandle, 0);
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE)
+    {
+        switch (status)
+        {
+        case GL_FRAMEBUFFER_UNDEFINED:                     ELOG("GL_FRAMEBUFFER_UNDEFINED                    "); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT        "); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER       "); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER       "); break;
+        case GL_FRAMEBUFFER_UNSUPPORTED:                   ELOG("GL_FRAMEBUFFER_UNSUPPORTED                  "); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE       "); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:      ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS     "); break;
+        default: ELOG("Unknoen framebuffer status error"); break;
+        }
+    }
+
+    GLenum draw[] = {
+        GL_COLOR_ATTACHMENT0,
+        GL_COLOR_ATTACHMENT1,
+        GL_COLOR_ATTACHMENT2,
+        GL_COLOR_ATTACHMENT3,
+    };
+
+    glDrawBuffers(ARRAY_COUNT(draw), draw);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    buffer.handle = handle;
+}
+
+FrameBuffer CreateGeometryBuffer(ivec2 display)
+{
+    FrameBuffer buffer;
+    buffer.albedoAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_UNSIGNED_BYTE, GL_RGB8);
+    buffer.specularAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_UNSIGNED_BYTE, GL_RGB8);
+    buffer.normalsAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT, GL_RGB16F);
+    buffer.positionAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT, GL_RGB16F);
+    buffer.depthAttachHandle = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display, GL_FLOAT, GL_DEPTH_COMPONENT24);
+    InitGeometryBuffer(buffer);
+
+    return buffer;
+}
+
 #define PushData(buffer, data, size) PushAlignedData(buffer, data, size, 1)
 #define PushUInt(buffer, value) { u32 v = value; PushAlignedData(buffer, &v, sizeof(v), 4); }
 #define PushFloat(buffer, value) { float v = value; PushAlignedData(buffer, &v, sizeof(v), 4); }

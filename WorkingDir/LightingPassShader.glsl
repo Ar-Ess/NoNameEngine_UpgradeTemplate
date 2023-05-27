@@ -40,7 +40,6 @@ void main()
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
-uniform sampler2D gFinal;
 uniform sampler2D gSpecular;
 uniform sampler2D gNormals;
 uniform sampler2D gPosition;
@@ -151,8 +150,6 @@ void main()
 	vNormal   = vec3(normals);
 	vPosition = vec3(position);
 	vViewDir  = normalize(uCameraPosition - vPosition);
-
-	//gl_FragDepth = ComputeDepth();
 
 	vec3 color = vec3(0);
 	bool anyLightActive = false;

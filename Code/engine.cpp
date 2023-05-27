@@ -201,7 +201,7 @@ void Init(App* app)
     app->deferredLConstBuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
 
     // Create Frame Buffers
-    app->gBuffer     = CreateFrameBuffer(app->displaySize);
+    app->gBuffer     = CreateGeometryBuffer(app->displaySize);
     app->frameBuffer = CreateFrameBuffer(app->displaySize);
 
     // Create TexturedQuads to draw Frame Buffers
@@ -963,24 +963,21 @@ void App::RenderDeferred()
         // Bind the vao vertex array
         glBindVertexArray(frameQuad->vao.handle);
 
-        glUniform1i(glGetUniformLocation(pHandle, "gFinal"),    0);
-        glUniform1i(glGetUniformLocation(pHandle, "gSpecular"), 1);
-        glUniform1i(glGetUniformLocation(pHandle, "gNormals"),  2);
-        glUniform1i(glGetUniformLocation(pHandle, "gPosition"), 3);
-        glUniform1i(glGetUniformLocation(pHandle, "gAlbedo"),   4);
-        glUniform1i(glGetUniformLocation(pHandle, "gDepth"),    5);
+        glUniform1i(glGetUniformLocation(pHandle, "gSpecular"), 0);
+        glUniform1i(glGetUniformLocation(pHandle, "gNormals"),  1);
+        glUniform1i(glGetUniformLocation(pHandle, "gPosition"), 2);
+        glUniform1i(glGetUniformLocation(pHandle, "gAlbedo"),   3);
+        glUniform1i(glGetUniformLocation(pHandle, "gDepth"),    4);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gBuffer.finalAttachHandle);
-        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, gBuffer.specularAttachHandle);
-        glActiveTexture(GL_TEXTURE2);
+        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, gBuffer.normalsAttachHandle);
-        glActiveTexture(GL_TEXTURE3);
+        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, gBuffer.positionAttachHandle);
-        glActiveTexture(GL_TEXTURE4);
+        glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, gBuffer.albedoAttachHandle);
-        glActiveTexture(GL_TEXTURE5);
+        glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, gBuffer.depthAttachHandle);
 
         // Draw the elements to the screen
