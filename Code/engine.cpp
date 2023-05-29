@@ -203,6 +203,7 @@ void Init(App* app)
     // Create Frame Buffers
     app->gBuffer     = CreateGeometryBuffer(app->displaySize);
     app->frameBuffer = CreateFrameBuffer(app->displaySize);
+    app->blurBuffer  = CreateBlurBuffer (app->displaySize);
 
     // Create TexturedQuads to draw Frame Buffers
     app->frameQuad   = app->InitTexturedQuad(nullptr);
@@ -296,7 +297,10 @@ TexturedQuad* App::InitTexturedQuad(const char* texture, glm::vec3 position)
         quad->textureProgram = LoadProgram(this, "TextureShader.glsl", "TEXTURED_GEOMETRY");
         Program& texturedGeometryProgram = *programs[quad->textureProgram];
         quad->textureProgramUniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
+        //TODO: Generatre lighting pass & Gausian Blur uniforms here, and not directly every frame (in render)
         quad->lightingPassProgram = LoadProgram(this, "LightingPassShader.glsl", "LIGHTING_PASS");
+
+        quad->bloomProgram = LoadProgram(this, "GausianBlurShader.glsl", "GAUSIAN_BLUR");
     }
     
     return quad;
@@ -629,6 +633,8 @@ void Render(App* app)
     if (!app->deferred) app->RenderForward();
     else app->RenderDeferred();
 
+    app->RenderBloom();
+
     app->RenderFrame();
 }
 
@@ -636,8 +642,9 @@ void App::RenderFrame()
 {
     // Draw Frame Buffer
     {
+        GLuint program = programs[frameQuad->textureProgram]->handle;
         // Get & Set the program to be used
-        glUseProgram(programs[frameQuad->textureProgram]->handle);
+        glUseProgram(program);
 
         // Bind the vao vertex array
         glBindVertexArray(frameQuad->vao.handle);
@@ -646,6 +653,16 @@ void App::RenderFrame()
         glUniform1i(frameQuad->textureProgramUniform, 0);
         // Activate slot for a texture
         glActiveTexture(GL_TEXTURE0);
+
+        // Send the texture as uniform variable to glsl script
+        glUniform1i(frameQuad->textureProgramUniform, 0);
+        // Activate slot for a texture
+        glActiveTexture(GL_TEXTURE0);
+        
+        // Send the texture as uniform variable to glsl script
+        glUniform1i(glGetUniformLocation(program, "uBloom"), 1);
+        // Activate slot for a texture
+        glActiveTexture(GL_TEXTURE1);
 
         // Bind the texture of the dice
         glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget());
@@ -1006,6 +1023,45 @@ void App::RenderDeferred()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
+}
+
+void App::RenderBloom()
+{
+    bool horizontal = true;
+
+    GLuint blurProgram = programs[frameQuad->bloomProgram]->handle;
+    glUseProgram(blurProgram);
+
+    glBindVertexArray(frameQuad->vao.handle);
+
+    for (unsigned int i = 0; i < 10; ++i)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, blurBuffer.handle[horizontal]);
+
+        if (i < 2)
+        {
+            glClearColor(0, 0, 0, 1);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
+
+        glUniform1i(glGetUniformLocation(blurProgram, "horizontal"), horizontal);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, i == 0 ? frameBuffer.bloomAttachHandle : blurBuffer.attachment[!horizontal]);
+
+        // Draw the elements to the screen
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
+        horizontal = !horizontal;
+    }
+
+    // Unbind the vertex array
+    glBindVertexArray(0);
+
+    // Unuse the program used
+    glUseProgram(0);
+
+    // Unbind the buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void App::HotReload()

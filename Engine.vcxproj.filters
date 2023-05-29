@@ -173,6 +173,9 @@
     <ClInclude Include="Code\OpenGlInfo.h">
       <Filter>Engine\Internal\Units</Filter>
     </ClInclude>
+    <ClInclude Include="Code\BlurBuffer.h">
+      <Filter>Engine\Internal\Buffers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="WorkingDir\GeometryPassShader.glsl">
@@ -185,6 +188,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="WorkingDir\ForwardShader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\GausianBlurShader.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

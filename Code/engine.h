@@ -8,6 +8,7 @@
 #include "Typedef.h"
 #include "OpenGlInfo.h"
 #include "FrameBuffer.h"
+#include "BlurBuffer.h"
 
 class Texture;
 class Program;
@@ -36,6 +37,7 @@ public:
     void RenderFrame();
     void RenderForward();
     void RenderDeferred();
+    void RenderBloom();
     void HotReload();
 
     // Graphics
@@ -77,6 +79,7 @@ public:
     Buffer      forwardConstBuffer;
     Buffer      deferredGConstBuffer;
     Buffer      deferredLConstBuffer;
+    BlurBuffer  blurBuffer;
     TexturedQuad* frameQuad = nullptr;
 
     // Camera
@@ -88,7 +91,7 @@ public:
     bool deferred = true;
     float ambient = 0.1;
     int currentRenderTarget = 0;
-    const char* renderTargets[8] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "LIGHT", "DEPTH", "BLOOMTEST"};
+    const char* renderTargets[8] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "LIGHT", "DEPTH"};
     // LIGHT
     float threshold = 1;
     bool blackwhite = false;
@@ -109,7 +112,6 @@ public:
             case 4:  ret = frameBuffer.albedoAttachHandle; break;
             case 5:  ret = frameBuffer.lightAttachHandle; break;
             case 6:  ret = frameBuffer.depthAttachHandle; break;
-            case 7:  ret = frameBuffer.bloomAttachHandle; break;
         }
 
         return ret;

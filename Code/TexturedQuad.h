@@ -48,6 +48,7 @@ public:
 
 	GLuint lightingPassProgram;
 	GLuint textureProgram;
+	GLuint bloomProgram;
 
 	GLuint textureProgramUniform;
 

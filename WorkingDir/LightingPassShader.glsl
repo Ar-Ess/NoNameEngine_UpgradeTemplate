@@ -123,7 +123,7 @@ vec3 SpotLight(in Light light, in vec3 texColor)
 	float epsilon = light.cutoff - light.outerCutoff;
 	float softness = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
 
-	if (theta < light.outerCutoff) return (ambient * light.color) * texColor;
+	if (theta < light.outerCutoff) return ambient * texColor;
 
 	vec3 ret = vec3(0);
 	float specular = 0.5;
@@ -162,6 +162,7 @@ void main()
 	normals  = texture(gNormals , vTexCoord);
 	position = texture(gPosition, vTexCoord);
 	gl_FragDepth = ComputeDepth(texture(gDepth, vTexCoord).x);
+	bloom = vec4(0, 0, 0, 1);
 
 	vNormal   = vec3(normals);
 	vPosition = vec3(position);
