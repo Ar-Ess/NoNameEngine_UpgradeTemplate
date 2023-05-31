@@ -25,6 +25,7 @@ in vec2 vTexCoord;
 // sending the texture data glUniform1i(app->programUniformTexture, 0);
 uniform sampler2D uTexture;
 uniform sampler2D uBloom;
+//uniform bool uApplyBloom;
 float exposure = 0.5;
 
 layout(location=0) out vec4 fragColor;
@@ -33,9 +34,10 @@ void main()
 {
 	const float gamma = 2.2;
 	vec3 tex = texture(uTexture, vTexCoord).rgb;
-	vec3 bloom = texture(uBloom, vTexCoord).rgb;
+	vec4 texBloom = texture(uBloom, vTexCoord);
+	vec3 bloom = texBloom.rgb;
 
-	if (bloom.x + bloom.y + bloom.z == 0)
+	if (texBloom.w == 0)
 	{
 		fragColor = vec4(tex, 1);
 		return;

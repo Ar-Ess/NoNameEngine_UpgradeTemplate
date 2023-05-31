@@ -653,11 +653,6 @@ void App::RenderFrame()
         glUniform1i(frameQuad->textureProgramUniform, 0);
         // Activate slot for a texture
         glActiveTexture(GL_TEXTURE0);
-
-        // Send the texture as uniform variable to glsl script
-        glUniform1i(frameQuad->textureProgramUniform, 0);
-        // Activate slot for a texture
-        glActiveTexture(GL_TEXTURE0);
         
         // Send the texture as uniform variable to glsl script
         glUniform1i(glGetUniformLocation(program, "uBloom"), 1);

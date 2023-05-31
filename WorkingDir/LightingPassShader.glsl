@@ -162,7 +162,7 @@ void main()
 	normals  = texture(gNormals , vTexCoord);
 	position = texture(gPosition, vTexCoord);
 	gl_FragDepth = ComputeDepth(texture(gDepth, vTexCoord).x);
-	bloom = vec4(0, 0, 0, 1);
+	bloom = vec4(0, 0, 0, 0);
 
 	vNormal   = vec3(normals);
 	vPosition = vec3(position);
@@ -185,8 +185,11 @@ void main()
 			case 3: result += SpotLight(light, vec3(albedo)); break;
 		}
 
-		bloom += CalculateLightOnly(light.bloomThreshold, result);
 		color += result;
+
+		if (light.type == 1) continue;
+
+		bloom += CalculateLightOnly(light.bloomThreshold, result);
 	}
 
 	light = CalculateLightOnly(threshold, color);

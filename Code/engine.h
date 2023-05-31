@@ -91,7 +91,7 @@ public:
     bool deferred = true;
     float ambient = 0.1;
     int currentRenderTarget = 0;
-    const char* renderTargets[8] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "LIGHT", "DEPTH"};
+    const char* renderTargets[7] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "LIGHT", "DEPTH"};
     // LIGHT
     float threshold = 1;
     bool blackwhite = false;
