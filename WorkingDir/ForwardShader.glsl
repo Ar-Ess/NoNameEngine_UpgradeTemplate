@@ -13,6 +13,7 @@ struct Light
 	float outerCutoff;
 	float intensity;
 	bool isActive;
+	bool bloomActive;
 	float bloomThreshold;
 };
 
@@ -184,6 +185,8 @@ void main()
 	position = vec4(vPosition, 1);
 	specular = vec4(vec3(0.5), 1);
 	gl_FragDepth = ComputeDepth();
+	bloom = vec4(0, 0, 0, 0);
+
 
 	vec3 color = vec3(0);
 	bool anyLightActive = false;
@@ -202,8 +205,11 @@ void main()
 			case 3: result += SpotLight(light, vec3(albedo)); break;
 		}
 
-		bloom += CalculateLightOnly(light.bloomThreshold, result);
 		color += result;
+		
+		if (light.type == 1 || !light.bloomActive) continue;
+
+		bloom += CalculateLightOnly(light.bloomThreshold, result);
 	}
 
 	light = CalculateLightOnly(threshold, color);

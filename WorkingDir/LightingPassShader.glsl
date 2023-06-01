@@ -13,6 +13,7 @@ struct Light
 	float outerCutoff;
 	float intensity;
 	bool isActive;
+	bool bloomActive;
 	float bloomThreshold;
 };
 
@@ -98,7 +99,7 @@ vec3 PointLight(in Light light, in vec3 texColor)
 	float linear = 0.09;
 	float quadratic = 0.032;
 	float distance  = length(light.position - vPosition);
-    float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));  
+	float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));  
 
 	vec3 ret = vec3(0);
 	vec3 lightDir = normalize(light.position - vPosition);
@@ -162,7 +163,7 @@ void main()
 	normals  = texture(gNormals , vTexCoord);
 	position = texture(gPosition, vTexCoord);
 	gl_FragDepth = ComputeDepth(texture(gDepth, vTexCoord).x);
-	bloom = vec4(0, 0, 0, 1);
+	bloom = vec4(0, 0, 0, 0);
 
 	vNormal   = vec3(normals);
 	vPosition = vec3(position);
@@ -185,8 +186,11 @@ void main()
 			case 3: result += SpotLight(light, vec3(albedo)); break;
 		}
 
-		bloom += CalculateLightOnly(light.bloomThreshold, result);
 		color += result;
+
+		if (light.type == 1 || !light.bloomActive) continue;
+
+		bloom += CalculateLightOnly(light.bloomThreshold, result);
 	}
 
 	light = CalculateLightOnly(threshold, color);

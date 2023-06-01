@@ -58,6 +58,8 @@ public:
     Light* AddDirectLight(glm::vec3 color, glm::vec3 direction);
     Light* AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff);
     void DeleteObject(intptr_t selected);
+    void ActivateBloom(bool active);
+    bool globalBloom = true;
 
     // Getters
     GLint GetMaxUniformBlockSize() const
@@ -91,7 +93,7 @@ public:
     bool deferred = true;
     float ambient = 0.1;
     int currentRenderTarget = 0;
-    const char* renderTargets[7] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "LIGHT", "DEPTH"};
+    const char* renderTargets[8] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "LIGHT", "BLOOM", "DEPTH"};
     // LIGHT
     float threshold = 1;
     bool blackwhite = false;
@@ -111,7 +113,8 @@ public:
             case 3:  ret = frameBuffer.positionAttachHandle; break;
             case 4:  ret = frameBuffer.albedoAttachHandle; break;
             case 5:  ret = frameBuffer.lightAttachHandle; break;
-            case 6:  ret = frameBuffer.depthAttachHandle; break;
+            case 6:  ret = blurBuffer.attachment[0]; break;
+            case 7:  ret = frameBuffer.depthAttachHandle; break;
         }
 
         return ret;
