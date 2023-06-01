@@ -618,18 +618,20 @@ void App::GUI()
 void App::Input()
 {
     if (!input.Active()) return;
+    float add = 1;
+    if (input.GetKey(K_SPACE)) add = 1.8;
 
     if (input.GetKey(K_A))
-        cam->Translate(-0.1, 0, 0);
+        cam->Translate(-0.2 * add, 0, 0);
 
     if (input.GetKey(K_D))
-        cam->Translate(0.1, 0, 0);
+        cam->Translate(0.2 * add, 0, 0);
 
     if (input.GetKey(K_W))
-        cam->Translate(0, 0, 0.1);
+        cam->Translate(0, 0, 0.2 * add);
 
     if (input.GetKey(K_S))
-        cam->Translate(0, 0, -0.1);
+        cam->Translate(0, 0, -0.2 * add);
 
     if (input.GetMouseButton(LEFT))
         cam->LookAt(input.mouseDelta, 0.1);
@@ -651,6 +653,11 @@ void Render(App* app)
 
 void App::RenderFrame()
 {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     // Draw Frame Buffer
     {
         GLuint program = programs[frameQuad->textureProgram]->handle;
@@ -1034,6 +1041,17 @@ void App::RenderDeferred()
 
 void App::RenderBloom()
 {
+    if (!globalBloom)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, blurBuffer.handle[0]);
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glBindFramebuffer(GL_FRAMEBUFFER, blurBuffer.handle[1]);
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
     bool horizontal = true;
 
     GLuint blurProgram = programs[frameQuad->bloomProgram]->handle;
