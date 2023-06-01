@@ -13,6 +13,7 @@ struct Light
 	float outerCutoff;
 	float intensity;
 	bool isActive;
+	bool bloomActive;
 	float bloomThreshold;
 };
 
@@ -98,7 +99,7 @@ vec3 PointLight(in Light light, in vec3 texColor)
 	float linear = 0.09;
 	float quadratic = 0.032;
 	float distance  = length(light.position - vPosition);
-    float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));  
+	float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));  
 
 	vec3 ret = vec3(0);
 	vec3 lightDir = normalize(light.position - vPosition);
@@ -187,7 +188,7 @@ void main()
 
 		color += result;
 
-		if (light.type == 1) continue;
+		if (light.type == 1 || !light.bloomActive) continue;
 
 		bloom += CalculateLightOnly(light.bloomThreshold, result);
 	}

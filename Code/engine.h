@@ -58,6 +58,8 @@ public:
     Light* AddDirectLight(glm::vec3 color, glm::vec3 direction);
     Light* AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff);
     void DeleteObject(intptr_t selected);
+    void ActivateBloom(bool active);
+    bool globalBloom = true;
 
     // Getters
     GLint GetMaxUniformBlockSize() const

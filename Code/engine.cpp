@@ -355,7 +355,7 @@ void App::InitModel(const char* path, glm::vec3 position, float scale)
 
 Light* App::AddPointLight(glm::vec3 color, glm::vec3 position)
 {
-    Light* l = new Light(LightType::LT_POINT, color, position, glm::vec3(), 0);
+    Light* l = new Light(LightType::LT_POINT, color, position, glm::vec3(), 0, &globalBloom);
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Point Light";
@@ -365,7 +365,7 @@ Light* App::AddPointLight(glm::vec3 color, glm::vec3 position)
 
 Light* App::AddDirectLight(glm::vec3 color, glm::vec3 direction)
 {
-    Light* l = new Light(LightType::LT_DIRECTIONAL, color, glm::vec3(), direction, 0);
+    Light* l = new Light(LightType::LT_DIRECTIONAL, color, glm::vec3(), direction, 0, &globalBloom);
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Directional Light";
@@ -375,7 +375,7 @@ Light* App::AddDirectLight(glm::vec3 color, glm::vec3 direction)
 
 Light* App::AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff)
 {
-    Light* l = new Light(LightType::LT_SPOT, color, position, direction, cutoff);
+    Light* l = new Light(LightType::LT_SPOT, color, position, direction, cutoff, &globalBloom);
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Spot Light";
@@ -412,6 +412,14 @@ void App::DeleteObject(intptr_t selected)
     objects.erase(objects.begin() + index);
     delete o;
 
+}
+
+void App::ActivateBloom(bool active)
+{
+    for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
+    {
+        (*it)->bloom = active;
+    }
 }
 
 glm::mat4 App::GlobalMatrix(glm::mat4 world)
@@ -489,6 +497,9 @@ void App::GUI()
             ImGui::Text("  Target:"); ImGui::SameLine();
             ImGui::Combo("##target", &currentRenderTarget, renderTargets, ARRAY_COUNT(renderTargets));
             ImGui::PopItemWidth();
+
+            ImGui::Text("   Bloom:"); ImGui::SameLine();
+            if (ImGui::ToggleButton("##bloom", &globalBloom)) ActivateBloom(globalBloom);
 
             if (renderTargets[currentRenderTarget] == "DEPTH")
             {
@@ -969,6 +980,7 @@ void App::RenderDeferred()
                 PushFloat(deferredLConstBuffer, l->OuterCuttoff());
                 PushFloat(deferredLConstBuffer, l->intensity);
                 PushBool(deferredLConstBuffer, l->active);
+                PushBool(deferredLConstBuffer, l->bloom);
                 PushFloat(deferredLConstBuffer, l->bloomThreshold);
             }
 
