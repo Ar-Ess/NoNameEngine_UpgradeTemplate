@@ -722,6 +722,7 @@ void App::RenderForward()
                 PushFloat(forwardConstBuffer, l->OuterCuttoff());
                 PushFloat(forwardConstBuffer, l->intensity);
                 PushBool(forwardConstBuffer, l->active);
+                PushBool(forwardConstBuffer, l->bloom);
                 PushFloat(forwardConstBuffer, l->bloomThreshold);
             }
 
