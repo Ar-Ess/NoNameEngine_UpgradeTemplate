@@ -649,18 +649,17 @@ void App::RenderFrame()
         // Bind the vao vertex array
         glBindVertexArray(frameQuad->vao.handle);
 
-        // Send the texture as uniform variable to glsl script
-        glUniform1i(frameQuad->textureProgramUniform, 0);
-        // Activate slot for a texture
         glActiveTexture(GL_TEXTURE0);
-        
-        // Send the texture as uniform variable to glsl script
-        glUniform1i(glGetUniformLocation(program, "uBloom"), 1);
-        // Activate slot for a texture
-        glActiveTexture(GL_TEXTURE1);
-
-        // Bind the texture of the dice
         glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget());
+        
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, blurBuffer.attachment[0]);
+        
+        glUniform1i(frameQuad->textureProgramUniform, 0);
+        
+        glUniform1i(glGetUniformLocation(program, "uBloom"), 1);
+
+        glUniform1i(glGetUniformLocation(program, "uApplyBloom"), currentRenderTarget == 0);
 
         // Draw the elements to the screen
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
