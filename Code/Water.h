@@ -3,8 +3,8 @@
 #include "Mesh.h"
 #include "WaterBuffer.h"
 //jaume
-
-class Model;
+#include "Model.h"
+//class Model;
 
 enum class WaterType 
 {
@@ -39,6 +39,27 @@ public:
 		return change;
 	}
 
+	float ReflectFactor() const
+	{
+		return reflectionFactor;
+	}
+
+	float RefractFactor() const
+	{
+		return refractionFactor;
+	}
+
+	void UpdateTransform() override
+	{
+		glm::mat4 pos = glm::translate(position);
+		glm::mat4 rot = glm::rotate(glm::radians(rotation.x), glm::vec3(1, 0, 0));
+		rot = glm::rotate(rot, glm::radians(rotation.y), glm::vec3(0, 1, 0));
+		rot = glm::rotate(rot, glm::radians(rotation.z), glm::vec3(0, 0, 1));
+		glm::mat4 scl = glm::scale(scale);
+
+		plane->world = pos * rot * scl;
+	}
+
 private:
 
 	WaterType type;
@@ -69,6 +90,4 @@ public:
 	//GLuint texUniformForward = 0;
 	//GLuint texUniformDeferred = 0;
 
-	std::vector<Mesh*> meshes;
-	std::vector<unsigned int> materials;
 };

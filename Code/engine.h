@@ -98,7 +98,7 @@ public:
     bool deferred = true;
     float ambient = 0.1;
     int currentRenderTarget = 0;
-    const char* renderTargets[8] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "LIGHT", "BLOOM", "DEPTH"};
+    const char* renderTargets[10] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "LIGHT", "BLOOM", "DEPTH", "WATERTEST", "WATERTEST2"};
     // LIGHT
     float threshold = 1;
     bool blackwhite = false;
@@ -120,6 +120,8 @@ public:
             case 5:  ret = frameBuffer.lightAttachHandle; break;
             case 6:  ret = blurBuffer.attachment[0]; break;
             case 7:  ret = frameBuffer.depthAttachHandle; break;
+            case 8:  ret = waters[0]->buffer.albedoAttachHandle[WBT_REFLECTION];
+            case 9:  ret = waters[0]->buffer.albedoAttachHandle[WBT_REFRACTION];
         }
 
         return ret;

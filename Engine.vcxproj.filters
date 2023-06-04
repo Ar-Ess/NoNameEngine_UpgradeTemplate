@@ -182,6 +182,9 @@
     <ClInclude Include="Code\Water.h">
       <Filter>Engine\Internal\Objects</Filter>
     </ClInclude>
+    <ClInclude Include="Code\ErrorHandler.h">
+      <Filter>Engine\Internal\Functionality</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="WorkingDir\GeometryPassShader.glsl">

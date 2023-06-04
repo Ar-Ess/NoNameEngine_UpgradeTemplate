@@ -8,6 +8,7 @@
 #include "Light.h"
 #include "Texture.h"
 #include "Camera.h"
+#include "ErrorHandler.h"
 
 #define BINDING(b) b
 #define ALIGN(value, alignment) (value + alignment - 1) & ~(alignment - 1)
@@ -1106,32 +1107,39 @@ void App::RenderWater()
 
     glEnable(GL_CLIP_DISTANCE0);
 
-    // Uniforms
-    {
-        BindBuffer(waterConstBuffer);
-        MapBuffer(waterConstBuffer, GL_WRITE_ONLY);
-
-        u32 globalParamsOffset = waterConstBuffer.head;
-
-        PushMat4(waterConstBuffer, cam->view);
-        PushMat4(waterConstBuffer, cam->projection);
-        PushVec3(waterConstBuffer, cam->Position());
-
-        AlignHead(waterConstBuffer, sizeof(glm::vec4));
-
-        u32 globalParamsSize = waterConstBuffer.head - globalParamsOffset;
-
-        UnmapBuffer(waterConstBuffer);
-        UnbindBuffer(waterConstBuffer);
-
-        BindBufferRange(waterConstBuffer, BINDING(2), 0, globalParamsSize); // Binding Global Params
-    }
-
     for (std::vector<Water*>::iterator it = waters.begin(); it != waters.end(); ++it)
     {
         Water* w = (*it);
 
-        // REFLECTIONS
+        // Uniforms
+        {
+            BindBuffer(waterConstBuffer);
+            MapBuffer(waterConstBuffer, GL_WRITE_ONLY);
+
+            u32 globalParamsOffset = waterConstBuffer.head;
+
+            PushMat4(waterConstBuffer, w->plane->world);
+            PushMat4(waterConstBuffer, GlobalMatrix(w->plane->world));
+            PushVec3(waterConstBuffer, cam->Position());
+
+            AlignHead(waterConstBuffer, sizeof(glm::vec4));
+
+            u32 globalParamsSize = waterConstBuffer.head - globalParamsOffset;
+
+            UnmapBuffer(waterConstBuffer);
+            UnbindBuffer(waterConstBuffer);
+
+            BindBufferRange(waterConstBuffer, BINDING(2), 0, globalParamsSize); // Binding Global Params
+        }
+
+        // REFLECTIONS =================================================
+
+        // TODO: Add this in app, don't need to be in every water object.
+        // Then put it outside the for loop, and also the glUseProgram(0)
+
+        GLuint program = programs[w->waterBuildProgram]->handle;
+        glUseProgram(program);
+
         glBindFramebuffer(GL_FRAMEBUFFER, w->buffer.handle[WBT_REFLECTION]);
 
         glClearColor(0, 0, 0, 1);
@@ -1139,16 +1147,35 @@ void App::RenderWater()
 
         // REFLECTIONS CODE
 
-        glUseProgram(w->waterBuildProgram);
-
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, gBuffer.albedoAttachHandle);
 
         glUniform1i(w->texUniformBuild, 0);
 
-        glUniform1i(glGetUniformLocation(w->waterBuildProgram, "uReflection"), true);
+        glUniform1i(glGetUniformLocation(program, "uReflection"), true);
 
-        // REFRACTIONS
+        glUniform1i(glGetUniformLocation(program, "uFactor"), w->ReflectFactor());
+
+        unsigned int size = w->plane->meshes.size();
+        for (u32 i = 0; i < size; ++i)
+        {
+            GLuint vao = w->plane->FindVAO(i, programs[w->waterBuildProgram]);
+            glBindVertexArray(vao);
+
+            Mesh* mesh = w->plane->meshes[i];
+            glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
+
+            glBindVertexArray(0);
+        }
+
+        glUseProgram(0);
+
+        // REFRACTIONS =========================================================
+
+        // TODO: Add this in app, don't need to be in every water object.
+        // Then put it outside the for loop, and also the glUseProgram(0)
+        glUseProgram(program);
+
         glBindFramebuffer(GL_FRAMEBUFFER, w->buffer.handle[WBT_REFRACTION]);
 
         glClearColor(0, 0, 0, 1);
@@ -1156,12 +1183,35 @@ void App::RenderWater()
 
         // REFRACTIONS CODE
 
-        glUseProgram(w->waterBuildProgram);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.albedoAttachHandle);
 
-        glUniform1i(glGetUniformLocation(w->waterBuildProgram, "uReflection"), false);
+        glUniform1i(w->texUniformBuild, 0);
+
+        glUniform1i(glGetUniformLocation(program, "uReflection"), false);
+
+        glUniform1i(glGetUniformLocation(program, "uFactor"), w->RefractFactor());
+
+        size = w->plane->meshes.size();
+        for (u32 i = 0; i < size; ++i)
+        {
+            GLuint vao = w->plane->FindVAO(i, programs[w->waterBuildProgram]);
+            glBindVertexArray(vao);
+
+            Mesh* mesh = w->plane->meshes[i];
+            glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
+
+            glBindVertexArray(0);
+        }
+
+        glUseProgram(0);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
+
+    glBindVertexArray(0);
+
+    glUseProgram(0);
 
     glDisable(GL_CLIP_DISTANCE0);
 
