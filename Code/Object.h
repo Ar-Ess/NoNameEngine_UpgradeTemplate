@@ -8,7 +8,8 @@ enum class ObjectType
 	O_EMPTY,
 	O_TEXTURED_QUAD,
 	O_MODEL,
-	O_LIGHT
+	O_LIGHT,
+	O_WATER//jaume
 };
 
 class Object

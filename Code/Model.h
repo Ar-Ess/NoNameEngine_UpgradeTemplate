@@ -9,9 +9,7 @@ class Model : public Object
 {
 public:
 
-	Model() : Object(
-		ObjectType::O_MODEL
-	) {}
+	Model(ObjectType type) : Object(type) {}
 
 	bool DrawGui() override
 	{

@@ -166,7 +166,7 @@ void ProcessAssimpNode(const aiScene* scene, aiNode* node, Model* myModel, u32 b
     }
 }
 
-Model* LoadModel(App* app, const char* filename)
+Model* LoadModel(App* app, const char* filename,ObjectType objectType)
 {
     const aiScene* scene = aiImportFile(filename,
         aiProcess_Triangulate |
@@ -188,7 +188,7 @@ Model* LoadModel(App* app, const char* filename)
     //Mesh& mesh = app->meshes.back();
     //u32 meshIdx = (u32)app->meshes.size() - 1u;
 
-    Model* m = new Model();
+    Model* m = new Model(objectType);
     app->objects.emplace_back(m);
     u32 modelIdx = (u32)app->objects.size() - 1u;
 

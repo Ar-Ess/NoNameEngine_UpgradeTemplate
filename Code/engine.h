@@ -13,6 +13,9 @@
 #include "Typedef.h"
 #include "OpenGlInfo.h"
 #include "FrameBuffer.h"
+//jaume
+#include "ReflectionBuffer.h"
+#include "RefractionBuffer.h"
 
 class TexturedQuad;
 class Light;
@@ -49,14 +52,15 @@ public:
     std::vector<Material*> materials;
     std::vector<Light*> lights;
 
+
     intptr_t selected = 0;
     TexturedQuad* InitTexturedQuad(const char* texture, bool forward, glm::vec3 position = glm::vec3(0.f));
-    void InitModel(const char* path, glm::vec3 position = glm::vec3(0.f), float scale = 1);
+    void InitModel(const char* path, ObjectType objectType, glm::vec3 position = glm::vec3(0.f), float scale = 1);
     Light* AddPointLight(glm::vec3 color, glm::vec3 position);
     Light* AddDirectLight(glm::vec3 color, glm::vec3 direction);
     Light* AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff);
     void DeleteObject(intptr_t selected);
-
+  
     // Getters
     GLint GetMaxUniformBlockSize() const
     {
@@ -79,6 +83,17 @@ public:
     Buffer      deferredLConstBuffer;
     TexturedQuad* frameQuad = nullptr;
     TexturedQuad* deferredQuad = nullptr;
+
+    //water render targets
+    GLuint Reflection;
+    GLuint Refraction;
+    GLuint ReflectionDepth;
+    GLuint RefractionDepth;
+
+    ReflectionBuffer BufferReflection;
+    RefractionBuffer frameBufferRefraction;
+
+
 
     // Camera
     glm::mat4 GlobalMatrix(glm::mat4 world)

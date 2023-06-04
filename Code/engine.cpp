@@ -5,6 +5,7 @@
 #include <stb_image_write.h>
 #include "AssimpLoading.h"
 #include "BufferManagement.h"
+#include "../WindowParams.h"
 
 #define BINDING(b) b
 #define ALIGN(value, alignment) (value + alignment - 1) & ~(alignment - 1)
@@ -151,6 +152,16 @@ GLuint CreateTexture2DFromImage(Image image)
     return texHandle;
 }
 
+void createEmptytexture(GLuint &tex) {
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+}
+
 u32 LoadTexture2D(App* app, const char* filepath)
 {
     for (u32 texIdx = 0; texIdx < app->textures.size(); ++texIdx)
@@ -198,10 +209,55 @@ void Init(App* app)
     app->deferredQuad  = app->InitTexturedQuad(nullptr, true );
     app->frameQuad     = app->InitTexturedQuad(nullptr, false);
 
-    app->InitModel("Patrick/Patrick.obj", vec3( 0, 1.5, 20), 0.4);
-    app->InitModel("Patrick/Patrick.obj", vec3(-7,   0,  5));
-    app->InitModel("Patrick/Patrick.obj", vec3( 6,   3, -2));
-    app->InitModel("Primitives/Plane/Plane.obj", glm::vec3(0, -4, 0), 3);
+    //   WATER TEXTURES
+    glGenTextures(1, &app->Reflection);
+    glBindTexture(GL_TEXTURE_2D, app->Reflection);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glGenTextures(1, &app->ReflectionDepth);
+    glBindTexture(GL_TEXTURE_2D, app->ReflectionDepth);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+    glGenTextures(1, &app->Refraction);
+    glBindTexture(GL_TEXTURE_2D, app->Refraction);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glGenTextures(1, &app->RefractionDepth);
+    glBindTexture(GL_TEXTURE_2D, app->Refraction);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    //   ! WATER TEXTURES
+    
+    //   WATER FRAME BUFFERS
+    app->frameVufferReflection = CreateFrameBuffer(app->displaySize);
+    app->frameVufferReflection.albedoAttachHandle = app->Reflection;
+    app->frameVufferReflection.depthAttachHandle = app->ReflectionDepth;
+
+    app->frameBufferRefraction = CreateFrameBuffer(app->displaySize);
+    app->frameBufferRefraction.albedoAttachHandle = app->Refraction;
+    app->frameBufferRefraction.depthAttachHandle = app->RefractionDepth;
+    //   ! WATER FRAME BUFFERS
+
+    app->InitModel("Patrick/Patrick.obj", ObjectType::O_MODEL, vec3( 0, 1.5, 20), 0.4);
+    app->InitModel("Patrick/Patrick.obj", ObjectType::O_MODEL, vec3(-7,   0,  5));
+    app->InitModel("Patrick/Patrick.obj", ObjectType::O_MODEL, vec3( 6,   3, -2));
+    app->InitModel("Primitives/Plane/Plane.obj", ObjectType::O_MODEL, glm::vec3(0, -4, 0), 3);
+    app->InitModel("Primitives/Plane/Plane.obj", ObjectType::O_WATER);
 
     app->AddDirectLight(glm::vec3(  1,   1, 0.75), glm::vec3( 0.35, 0.75,   0))->intensity = 0.3;
     app->AddDirectLight(glm::vec3(  1, 0.5,  0.5), glm::vec3(   -1,   -1, 0.2))->intensity = 0.6;
@@ -209,6 +265,7 @@ void Init(App* app)
     app->AddPointLight (glm::vec3(  1, 0.3,    0), glm::vec3( -6.5,  0.1,  11))->intensity = 1.2;
     app->AddPointLight (glm::vec3(0.8, 0.1,  0.5), glm::vec3(  0.5,    0,  21))->intensity = 1.7;
     app->AddSpotLight  (glm::vec3(  0,   1,    1), glm::vec3(    6,   10,  -1), glm::vec3(0, -1, 0), 18)->intensity = 1.5;
+
 }
 
 TexturedQuad* App::InitTexturedQuad(const char* texture, bool lighting, glm::vec3 position)
@@ -292,7 +349,7 @@ TexturedQuad* App::InitTexturedQuad(const char* texture, bool lighting, glm::vec
     return quad;
 }
 
-void App::InitModel(const char* path, glm::vec3 position, float scale)
+void App::InitModel(const char* path, ObjectType objectType, glm::vec3 position,  float scale)
 {
     u32 programFW = LoadProgram(this, "ForwardShader.glsl", "FORWARD_SHADER");
     u32 programGD = LoadProgram(this, "GeometryPassShader.glsl", "GEOMETRY_PASS");
@@ -329,7 +386,7 @@ void App::InitModel(const char* path, glm::vec3 position, float scale)
         pGD->attributes.emplace_back(new VertexShaderAttribute(glGetAttribLocation(pGD->handle, attribName), attribSize));
     }
 
-    Model* m = LoadModel(this, path);
+    Model* m = LoadModel(this, path, objectType);
     m->forwardProgram  = programFW;
     m->deferredProgram = programGD;
     m->position = position;
@@ -486,10 +543,10 @@ void App::GUI()
             if (ImGui::BeginMenu("Models"))
             {
                 if (ImGui::MenuItem("Patrick"))
-                    InitModel("Patrick/Patrick.obj");
+                    InitModel("Patrick/Patrick.obj", ObjectType::O_MODEL);
 
                 if (ImGui::MenuItem("Plane"))
-                    InitModel("Primitives/Plane/Plane.obj", glm::vec3(0, -4, 0));
+                    InitModel("Primitives/Plane/Plane.obj", ObjectType::O_MODEL, glm::vec3(0, -4, 0));
 
                 ImGui::EndMenu();
             }
@@ -711,7 +768,7 @@ void App::RenderForward()
             case ObjectType::O_MODEL:
             {
                 Model* m = (Model*)o;
-
+                
                 BindBufferRange(forwardConstBuffer, BINDING(1), o->localParamsOffset, o->localParamsSize); // Binding Local Params
 
                 glUseProgram(programs[m->forwardProgram]->handle);
@@ -1036,7 +1093,7 @@ void App::RenderDeferred()
 
                 break;
             }
-
+        
             default: break;
             }
         }
@@ -1044,7 +1101,11 @@ void App::RenderDeferred()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    {}
+    //water pass
+    {
+
+
+    }
 
     // Lighting Pass
     {

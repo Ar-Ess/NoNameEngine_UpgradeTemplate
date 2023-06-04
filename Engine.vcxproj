@@ -56,6 +56,9 @@
     <ClInclude Include="Code\VertexBufferAttibute.h" />
     <ClInclude Include="Code\VertexBufferLayout.h" />
     <ClInclude Include="Code\VertexShaderAttribute.h" />
+    <ClInclude Include="Code\Water.h" />
+    <ClInclude Include="ReflectionBuffer.h" />
+    <ClInclude Include="RefractionBuffer.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\khrplatform.h" />
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h" />
@@ -67,6 +70,7 @@
     <ClInclude Include="ThirdParty\imgui-docking\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\imgui-docking\imstb_truetype.h" />
     <ClInclude Include="ThirdParty\stb\stb_image.h" />
+    <ClInclude Include="WindowParams.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="WorkingDir\LightingPassShader.glsl" />

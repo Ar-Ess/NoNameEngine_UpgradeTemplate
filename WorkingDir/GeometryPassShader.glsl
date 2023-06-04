@@ -65,7 +65,7 @@ float ComputeDepth()
 }
 
 void main()
-{
+{ 
 	albedo   = vec4(vec3(texture(uTexture, vTexCoord)), 1);
     normals  = vec4(vNormal,   1);
     position = vec4(vPosition, 1);
