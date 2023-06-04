@@ -176,6 +176,12 @@
     <ClInclude Include="Code\BlurBuffer.h">
       <Filter>Engine\Internal\Buffers</Filter>
     </ClInclude>
+    <ClInclude Include="Code\WaterBuffer.h">
+      <Filter>Engine\Internal\Buffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Water.h">
+      <Filter>Engine\Internal\Objects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="WorkingDir\GeometryPassShader.glsl">
@@ -191,6 +197,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="WorkingDir\GausianBlurShader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\WaterPassShader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="WorkingDir\WaterBuildShader.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

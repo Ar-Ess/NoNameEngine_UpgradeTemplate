@@ -9,6 +9,7 @@
 #include "OpenGlInfo.h"
 #include "FrameBuffer.h"
 #include "BlurBuffer.h"
+#include "Water.h"
 
 class Texture;
 class Program;
@@ -54,6 +55,7 @@ public:
     intptr_t selected = 0;
     TexturedQuad* InitTexturedQuad(const char* texture, glm::vec3 position = glm::vec3(0.f));
     void InitModel(const char* path, glm::vec3 position = glm::vec3(0.f), float scale = 1);
+    void InitWater(glm::vec3 position = glm::vec3(0.f), float scale = 1);
     Light* AddPointLight(glm::vec3 color, glm::vec3 position);
     Light* AddDirectLight(glm::vec3 color, glm::vec3 direction);
     Light* AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff);

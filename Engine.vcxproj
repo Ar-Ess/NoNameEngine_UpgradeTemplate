@@ -49,6 +49,7 @@
     <ClInclude Include="Code\OpenGlInfo.h" />
     <ClInclude Include="Code\platform.h" />
     <ClInclude Include="Code\Program.h" />
+    <ClInclude Include="Code\WaterBuffer.h" />
     <ClInclude Include="Code\Texture.h" />
     <ClInclude Include="Code\TexturedQuad.h" />
     <ClInclude Include="Code\Typedef.h" />
@@ -58,8 +59,6 @@
     <ClInclude Include="Code\VertexBufferLayout.h" />
     <ClInclude Include="Code\VertexShaderAttribute.h" />
     <ClInclude Include="Code\Water.h" />
-    <ClInclude Include="ReflectionBuffer.h" />
-    <ClInclude Include="RefractionBuffer.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\khrplatform.h" />
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h" />
@@ -71,14 +70,15 @@
     <ClInclude Include="ThirdParty\imgui-docking\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\imgui-docking\imstb_truetype.h" />
     <ClInclude Include="ThirdParty\stb\stb_image.h" />
-    <ClInclude Include="WindowParams.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="WorkingDir\WaterBuildShader.glsl" />
     <None Include="WorkingDir\GausianBlurShader.glsl" />
     <None Include="WorkingDir\LightingPassShader.glsl" />
     <None Include="WorkingDir\ForwardShader.glsl" />
     <None Include="WorkingDir\GeometryPassShader.glsl" />
     <None Include="WorkingDir\TextureShader.glsl" />
+    <None Include="WorkingDir\WaterPassShader.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

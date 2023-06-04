@@ -1,67 +1,73 @@
 #pragma once
 #include "Object.h"
 #include "Mesh.h"
-#include "glm/glm.hpp"
+#include "WaterBuffer.h"
 //jaume
 
-enum class WaterType {
+class Model;
+
+enum class WaterType 
+{
 	WT_STILL
 };
 
-struct Water : public Object {
-	Water(WaterType type, glm::vec3 baseColor, glm::vec3 position,glm::vec3 scale, float refractionFactor,float reflectionFactor,float densityFactor) : type(type), baseColor(baseColor),refractionFactor(refractionFactor),
-		reflectionFactor(reflectionFactor),densityFactor(densityFactor), Object(ObjectType::O_WATER) {
-		this->position = position;
-		this->scale = scale;
+class Water : public Object 
+{
+public:
+	
+	Water() : Object(ObjectType::O_WATER) 
+	{
 	}
 
 	bool DrawGui() override
 	{
 		bool change = false;
 
-		switch (type)
+		if (ImGui::CollapsingHeader("Transform"))
 		{
-		case WaterType::WT_STILL:
-			if (ImGui::CollapsingHeader("Transform"))
-				change = Draw3Float("Position:", &position, 0.1, 0, 0, "X: %.2f", "Y: %.2f", "Z: %.2f");
-			break;
+			if (Draw3Float("Position:", &position, 0.1, 0, 0, "X: %.2f", "Y: %.2f", "Z: %.2f")) change = true;
+			if (Draw3Float("Scale:", &scale, 0.1, 0, 0, "X: %.2f", "Y: %.2f", "Z: %.2f")) change = true;
 		}
-		if (ImGui::CollapsingHeader("RefractionFactor"))
+
+		if (ImGui::CollapsingHeader("Config"))
 		{
-			DrawFloat("factor:", &refractionFactor, 0.01, 0, 1, "F: %.2f");
+			DrawFloat("Reflection:", &reflectionFactor, 0.01, 0, 1, "%.2f");
+			DrawFloat("Refraction:", &refractionFactor, 0.01, 0, 1, "%.2f");
+			DrawFloat("Density   :", &densityFactor,    0.01, 0, 1, "%.2f");
 		}
-		if (ImGui::CollapsingHeader("ReflectionFactor"))
-		{
-			DrawFloat("factor:", &reflectionFactor, 0.01, 0, 1, "F: %.2f");
-		}
-		if (ImGui::CollapsingHeader("DensityFactor"))
-		{
-			DrawFloat("factor:", &densityFactor, 0.01, 0, 1, "F: %.2f");
-		}
+
 		return change;
 	}
 
-public:
-	glm::vec3 position;
-	glm::vec3 scale;
-
 private:
-	WaterType type;
-	glm::vec3 baseColor;
 
-	float refractionFactor;
-	float reflectionFactor;
-	float densityFactor;
+	WaterType type;
+	glm::vec3 baseColor = glm::vec3(0, 0, 0.5);
+
+	float refractionFactor = 0.7f;
+	float reflectionFactor = 0.5f;
+	float densityFactor = 0.5f;
 
 public:
-	// programs[this->forwardProgram]->handle
-	GLuint forwardProgram = 0;
 
-	// programs[this->deferredProgram]->handle
-	GLuint deferredProgram = 0;
+	WaterBuffer buffer;
 
-	GLuint texUniformForward = 0;
-	GLuint texUniformDeferred = 0;
+	Model* plane = nullptr;
+
+	GLuint waterBuildProgram;
+	GLuint waterPassProgram;
+
+	GLuint texUniformBuild;
+	GLuint texUniformPass;
+
+	//// programs[this->forwardProgram]->handle
+	//GLuint forwardProgram = 0;
+
+	//// programs[this->deferredProgram]->handle
+	//GLuint deferredProgram = 0;
+
+	//GLuint texUniformForward = 0;
+	//GLuint texUniformDeferred = 0;
 
 	std::vector<Mesh*> meshes;
 	std::vector<unsigned int> materials;
