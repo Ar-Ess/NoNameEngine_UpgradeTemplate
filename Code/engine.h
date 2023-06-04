@@ -51,7 +51,6 @@ public:
     std::vector<Material*> materials;
     std::vector<Light*> lights;
 
-
     intptr_t selected = 0;
     TexturedQuad* InitTexturedQuad(const char* texture, glm::vec3 position = glm::vec3(0.f));
     void InitModel(const char* path, glm::vec3 position = glm::vec3(0.f), float scale = 1);
@@ -84,15 +83,6 @@ public:
     Buffer      deferredLConstBuffer;
     BlurBuffer  blurBuffer;
     TexturedQuad* frameQuad = nullptr;
-
-    //water render targets
-    GLuint Reflection;
-    GLuint Refraction;
-    GLuint ReflectionDepth;
-    GLuint RefractionDepth;
-
-    //ReflectionBuffer BufferReflection;
-    //RefractionBuffer frameBufferRefraction;
 
     // Camera
     glm::mat4 GlobalMatrix(glm::mat4 world);
