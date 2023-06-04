@@ -38,6 +38,7 @@ public:
     void RenderFrame();
     void RenderForward();
     void RenderDeferred();
+    void RenderWater();
     void RenderBloom();
     void HotReload();
 
@@ -46,11 +47,12 @@ public:
     ivec2 displaySize = {0, 0};
 
     // Vectors
-    std::vector<Texture*> textures;
-    std::vector<Program*> programs;
-    std::vector<Object*>  objects;
+    std::vector<Texture*>  textures;
+    std::vector<Program*>  programs;
+    std::vector<Object*>   objects;
+    std::vector<Water*>    waters;
     std::vector<Material*> materials;
-    std::vector<Light*> lights;
+    std::vector<Light*>    lights;
 
     intptr_t selected = 0;
     TexturedQuad* InitTexturedQuad(const char* texture, glm::vec3 position = glm::vec3(0.f));
@@ -79,10 +81,11 @@ public:
 
     // Buffers
     FrameBuffer frameBuffer;
-    FrameBuffer gBuffer;
+    FrameBuffer gBuffer; // TODO: Create a GeometryBuffer class and remove Final Attachment inside
     Buffer      forwardConstBuffer;
     Buffer      deferredGConstBuffer;
     Buffer      deferredLConstBuffer;
+    Buffer      waterConstBuffer;
     BlurBuffer  blurBuffer;
     TexturedQuad* frameQuad = nullptr;
 

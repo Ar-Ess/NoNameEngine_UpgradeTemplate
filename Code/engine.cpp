@@ -199,6 +199,7 @@ void Init(App* app)
     app->forwardConstBuffer   = CreateConstantBuffer(app->GetMaxUniformBlockSize());
     app->deferredGConstBuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
     app->deferredLConstBuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
+    app->waterConstBuffer     = CreateConstantBuffer(app->GetMaxUniformBlockSize());
 
     // Create Frame Buffers
     app->gBuffer     = CreateGeometryBuffer(app->displaySize);
@@ -408,6 +409,7 @@ void App::InitWater(glm::vec3 position, float scale)
     w->texUniformPass = texUniformWP;
 
     objects.push_back(w);
+    waters.push_back(w);
     w->name = "Water";
 }
 
@@ -1008,6 +1010,7 @@ void App::RenderDeferred()
     }
 
     {}
+    RenderWater();
 
     // Lighting Pass
     {
@@ -1095,6 +1098,74 @@ void App::RenderDeferred()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
+}
+
+void App::RenderWater()
+{
+    if (waters.empty()) return;
+
+    glEnable(GL_CLIP_DISTANCE0);
+
+    // Uniforms
+    {
+        BindBuffer(waterConstBuffer);
+        MapBuffer(waterConstBuffer, GL_WRITE_ONLY);
+
+        u32 globalParamsOffset = waterConstBuffer.head;
+
+        PushMat4(waterConstBuffer, cam->view);
+        PushMat4(waterConstBuffer, cam->projection);
+        PushVec3(waterConstBuffer, cam->Position());
+
+        AlignHead(waterConstBuffer, sizeof(glm::vec4));
+
+        u32 globalParamsSize = waterConstBuffer.head - globalParamsOffset;
+
+        UnmapBuffer(waterConstBuffer);
+        UnbindBuffer(waterConstBuffer);
+
+        BindBufferRange(waterConstBuffer, BINDING(2), 0, globalParamsSize); // Binding Global Params
+    }
+
+    for (std::vector<Water*>::iterator it = waters.begin(); it != waters.end(); ++it)
+    {
+        Water* w = (*it);
+
+        // REFLECTIONS
+        glBindFramebuffer(GL_FRAMEBUFFER, w->buffer.handle[WBT_REFLECTION]);
+
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // REFLECTIONS CODE
+
+        glUseProgram(w->waterBuildProgram);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.albedoAttachHandle);
+
+        glUniform1i(w->texUniformBuild, 0);
+
+        glUniform1i(glGetUniformLocation(w->waterBuildProgram, "uReflection"), true);
+
+        // REFRACTIONS
+        glBindFramebuffer(GL_FRAMEBUFFER, w->buffer.handle[WBT_REFRACTION]);
+
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // REFRACTIONS CODE
+
+        glUseProgram(w->waterBuildProgram);
+
+        glUniform1i(glGetUniformLocation(w->waterBuildProgram, "uReflection"), false);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    glDisable(GL_CLIP_DISTANCE0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void App::RenderBloom()
