@@ -1,24 +1,22 @@
 #pragma once
 
 #include "platform.h"
-#include "Object.h"
-#include "Material.h"
-#include "Texture.h"
-#include "Program.h"
-#include "Camera.h"
-#include "Light.h"
+#include <glad/glad.h>
 #include "Image.h"
 #include "Vertex.h"
 #include "Buffer.h"
 #include "Typedef.h"
 #include "OpenGlInfo.h"
 #include "FrameBuffer.h"
-//jaume
-#include "ReflectionBuffer.h"
-#include "RefractionBuffer.h"
+#include "BlurBuffer.h"
 
+class Texture;
+class Program;
+class Object;
+class Material;
 class TexturedQuad;
 class Light;
+class Camera;
 
 class App
 {
@@ -26,7 +24,7 @@ public:
 
     // Loop
     float deltaTime = 0;
-    bool isRunning;
+    bool isRunning = false;
 
     // Input
     Input input;
@@ -36,14 +34,15 @@ public:
     void GUI();
 
     // Render
+    void RenderFrame();
     void RenderForward();
     void RenderDeferred();
-    void RenderDeferred2();
+    void RenderBloom();
     void HotReload();
 
     // Graphics
     OpenGLInfo openGLInformation;
-    ivec2 displaySize;
+    ivec2 displaySize = {0, 0};
 
     // Vectors
     std::vector<Texture*> textures;
@@ -54,13 +53,15 @@ public:
 
 
     intptr_t selected = 0;
-    TexturedQuad* InitTexturedQuad(const char* texture, bool forward, glm::vec3 position = glm::vec3(0.f));
-    void InitModel(const char* path, ObjectType objectType, glm::vec3 position = glm::vec3(0.f), float scale = 1);
+    TexturedQuad* InitTexturedQuad(const char* texture, glm::vec3 position = glm::vec3(0.f));
+    void InitModel(const char* path, glm::vec3 position = glm::vec3(0.f), float scale = 1);
     Light* AddPointLight(glm::vec3 color, glm::vec3 position);
     Light* AddDirectLight(glm::vec3 color, glm::vec3 direction);
     Light* AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff);
     void DeleteObject(intptr_t selected);
-  
+    void ActivateBloom(bool active);
+    bool globalBloom = true;
+
     // Getters
     GLint GetMaxUniformBlockSize() const
     {
@@ -81,8 +82,8 @@ public:
     Buffer      forwardConstBuffer;
     Buffer      deferredGConstBuffer;
     Buffer      deferredLConstBuffer;
+    BlurBuffer  blurBuffer;
     TexturedQuad* frameQuad = nullptr;
-    TexturedQuad* deferredQuad = nullptr;
 
     //water render targets
     GLuint Reflection;
@@ -90,17 +91,11 @@ public:
     GLuint ReflectionDepth;
     GLuint RefractionDepth;
 
-    ReflectionBuffer BufferReflection;
-    RefractionBuffer frameBufferRefraction;
-
-
+    //ReflectionBuffer BufferReflection;
+    //RefractionBuffer frameBufferRefraction;
 
     // Camera
-    glm::mat4 GlobalMatrix(glm::mat4 world)
-    {
-        global = cam->projection * cam->view * world;
-        return global;
-    }
+    glm::mat4 GlobalMatrix(glm::mat4 world);
     Camera* cam = nullptr;
     glm::mat4 global = glm::mat4(1.0f);
 
@@ -108,15 +103,17 @@ public:
     bool deferred = true;
     float ambient = 0.1;
     int currentRenderTarget = 0;
-    const char* renderTargets[6] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "DEPTH"};
+    const char* renderTargets[8] = {"FINAL", "SPECULAR", "NORMALS", "POSITION", "ALBEDO", "LIGHT", "BLOOM", "DEPTH"};
+    // LIGHT
+    float threshold = 1;
+    bool blackwhite = false;
+    // DEPTH
     float depthNear = 0.1;
     float depthFar = 100;
 
-    GLuint CurrentRenderTarget(bool geometryDepth)
+    GLuint CurrentRenderTarget()
     {
         GLuint ret;
-
-        FrameBuffer* buffer = geometryDepth ? &gBuffer : &frameBuffer;
 
         switch (currentRenderTarget)
         {
@@ -125,7 +122,9 @@ public:
             case 2:  ret = frameBuffer.normalsAttachHandle; break;
             case 3:  ret = frameBuffer.positionAttachHandle; break;
             case 4:  ret = frameBuffer.albedoAttachHandle; break;
-            case 5:  ret = buffer->depthAttachHandle; break;
+            case 5:  ret = frameBuffer.lightAttachHandle; break;
+            case 6:  ret = blurBuffer.attachment[0]; break;
+            case 7:  ret = frameBuffer.depthAttachHandle; break;
         }
 
         return ret;

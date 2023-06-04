@@ -1,11 +1,14 @@
 #include "engine.h"
 #include "TexturedQuad.h"
-#include "Model.h"
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include "AssimpLoading.h"
+#include <glm/gtc/type_ptr.hpp>
 #include "BufferManagement.h"
-#include "../WindowParams.h"
+#include "Light.h"
+#include "Texture.h"
+#include "Camera.h"
+
 
 #define BINDING(b) b
 #define ALIGN(value, alignment) (value + alignment - 1) & ~(alignment - 1)
@@ -190,74 +193,82 @@ u32 LoadTexture2D(App* app, const char* filepath)
 
 void Init(App* app)
 {
+    // Create Camera
     app->cam = new Camera(glm::vec3(0, 3, 26), app->displaySize.x/app->displaySize.y, 0.1, 1000);
 
+    // Check Version
     if (GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 3))
         glDebugMessageCallback(OnGlError, app);
 
+    // GL Enables
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // Create Constant Buffers for Uniforms
     app->forwardConstBuffer   = CreateConstantBuffer(app->GetMaxUniformBlockSize());
     app->deferredGConstBuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
     app->deferredLConstBuffer = CreateConstantBuffer(app->GetMaxUniformBlockSize());
 
-    app->gBuffer     = CreateFrameBuffer(app->displaySize);
+    // Create Frame Buffers
+    app->gBuffer     = CreateGeometryBuffer(app->displaySize);
     app->frameBuffer = CreateFrameBuffer(app->displaySize);
-    app->deferredQuad  = app->InitTexturedQuad(nullptr, true );
-    app->frameQuad     = app->InitTexturedQuad(nullptr, false);
+    app->blurBuffer  = CreateBlurBuffer (app->displaySize);
 
-    //   WATER TEXTURES
-    glGenTextures(1, &app->Reflection);
-    glBindTexture(GL_TEXTURE_2D, app->Reflection);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    ////   WATER TEXTURES
+    //glGenTextures(1, &app->Reflection);
+    //glBindTexture(GL_TEXTURE_2D, app->Reflection);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
-    glGenTextures(1, &app->ReflectionDepth);
-    glBindTexture(GL_TEXTURE_2D, app->ReflectionDepth);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    //glGenTextures(1, &app->ReflectionDepth);
+    //glBindTexture(GL_TEXTURE_2D, app->ReflectionDepth);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
-    glGenTextures(1, &app->Refraction);
-    glBindTexture(GL_TEXTURE_2D, app->Refraction);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    //glGenTextures(1, &app->Refraction);
+    //glBindTexture(GL_TEXTURE_2D, app->Refraction);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
-    glGenTextures(1, &app->RefractionDepth);
-    glBindTexture(GL_TEXTURE_2D, app->Refraction);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-    //   ! WATER TEXTURES
+    //glGenTextures(1, &app->RefractionDepth);
+    //glBindTexture(GL_TEXTURE_2D, app->Refraction);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    ////   ! WATER TEXTURES
     
-    //   WATER FRAME BUFFERS
-    app->frameVufferReflection = CreateFrameBuffer(app->displaySize);
-    app->frameVufferReflection.albedoAttachHandle = app->Reflection;
-    app->frameVufferReflection.depthAttachHandle = app->ReflectionDepth;
+    ////   WATER FRAME BUFFERS
+    //app->frameVufferReflection = CreateFrameBuffer(app->displaySize);
+    //app->frameVufferReflection.albedoAttachHandle = app->Reflection;
+    //app->frameVufferReflection.depthAttachHandle = app->ReflectionDepth;
 
-    app->frameBufferRefraction = CreateFrameBuffer(app->displaySize);
-    app->frameBufferRefraction.albedoAttachHandle = app->Refraction;
-    app->frameBufferRefraction.depthAttachHandle = app->RefractionDepth;
-    //   ! WATER FRAME BUFFERS
+    //app->frameBufferRefraction = CreateFrameBuffer(app->displaySize);
+    //app->frameBufferRefraction.albedoAttachHandle = app->Refraction;
+    //app->frameBufferRefraction.depthAttachHandle = app->RefractionDepth;
+    ////   ! WATER FRAME BUFFERS
 
-    app->InitModel("Patrick/Patrick.obj", ObjectType::O_MODEL, vec3( 0, 1.5, 20), 0.4);
-    app->InitModel("Patrick/Patrick.obj", ObjectType::O_MODEL, vec3(-7,   0,  5));
-    app->InitModel("Patrick/Patrick.obj", ObjectType::O_MODEL, vec3( 6,   3, -2));
-    app->InitModel("Primitives/Plane/Plane.obj", ObjectType::O_MODEL, glm::vec3(0, -4, 0), 3);
-    app->InitModel("Primitives/Plane/Plane.obj", ObjectType::O_WATER);
+    // Create TexturedQuads to draw Frame Buffers
+    app->frameQuad   = app->InitTexturedQuad(nullptr);
+
+    // Generate Initial Screen
+    //return; //<- Uncomment this for empty initial scene
+    app->InitModel("Patrick/Patrick.obj", vec3( 0, 1.5, 20), 0.4);
+    app->InitModel("Patrick/Patrick.obj", vec3(-7,   0,  5));
+    app->InitModel("Patrick/Patrick.obj", vec3( 6,   3, -2));
+    app->InitModel("Primitives/Plane/Plane.obj", glm::vec3(0, -4, 0), 3);
 
     app->AddDirectLight(glm::vec3(  1,   1, 0.75), glm::vec3( 0.35, 0.75,   0))->intensity = 0.3;
     app->AddDirectLight(glm::vec3(  1, 0.5,  0.5), glm::vec3(   -1,   -1, 0.2))->intensity = 0.6;
@@ -268,7 +279,7 @@ void Init(App* app)
 
 }
 
-TexturedQuad* App::InitTexturedQuad(const char* texture, bool lighting, glm::vec3 position)
+TexturedQuad* App::InitTexturedQuad(const char* texture, glm::vec3 position)
 {
     const Vertex vertex[] = {
         Vertex(-1.f, -1.f, 0.0f, 0.0f, 0.0f),
@@ -313,7 +324,7 @@ TexturedQuad* App::InitTexturedQuad(const char* texture, bool lighting, glm::vec
     // Bind el vertex array per editarlo
     glBindVertexArray(quad->vao.handle);
     // Bind el buffer dels vertex per editarlo i colocarlo dins del vao
-    // Quan bindejes a, i després bindejes b, estàs posant b dins a.
+    // Quan bindejes a, i desprï¿½s bindejes b, estï¿½s posant b dins a.
     glBindBuffer(GL_ARRAY_BUFFER, quad->vertexHandle);
     // Dir-li com llegir aquesta data (pos dels vertex).
     // En aquest cas, 3 floats amb un total d'espai de "Vertex"
@@ -322,28 +333,30 @@ TexturedQuad* App::InitTexturedQuad(const char* texture, bool lighting, glm::vec
     glEnableVertexAttribArray(0);
     // Dir-li com llegir aquesta data (uv dels vertex).
     // En aquest cas, 2 floats amb un total d'espai de "Vertex"
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float))); // Avans té 3 floats (pos)
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float))); // Avans tï¿½ 3 floats (pos)
     // Activar aquesta manera de llegir (attribut)
     glEnableVertexAttribArray(1);
     // Bindejar al vao la array d'elements (indexs)
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad->indexHandle); // S s'ha de tancar, que normalment no cal, tancar-lo DESPRÉS de tancar el grup (el vao)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad->indexHandle); // S s'ha de tancar, que normalment no cal, tancar-lo DESPRï¿½S de tancar el grup (el vao)
 
     // Tancar el binding del vao (no cal tancar els de dins, ja es tenquen)
     glBindVertexArray(0);
-
-    if (!lighting)
-    {
-        quad->textureProgram = LoadProgram(this, "TextureShader.glsl", "TEXTURED_GEOMETRY");
-        Program& texturedGeometryProgram = *programs[quad->textureProgram];
-        quad->textureProgramUniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
-    }
-    else quad->lightingPassProgram = LoadProgram(this, "LightingPassShader.glsl", "LIGHTING_PASS");
 
     if (texture != nullptr)
     {
         quad->texture = LoadTexture2D(this, texture);
         objects.emplace_back(quad);
         quad->name = "Quad";
+    }
+    else
+    {
+        quad->textureProgram = LoadProgram(this, "TextureShader.glsl", "TEXTURED_GEOMETRY");
+        Program& texturedGeometryProgram = *programs[quad->textureProgram];
+        quad->textureProgramUniform = glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
+        //TODO: Generatre lighting pass & Gausian Blur uniforms here, and not directly every frame (in render)
+        quad->lightingPassProgram = LoadProgram(this, "LightingPassShader.glsl", "LIGHTING_PASS");
+
+        quad->bloomProgram = LoadProgram(this, "GausianBlurShader.glsl", "GAUSIAN_BLUR");
     }
     
     return quad;
@@ -398,7 +411,7 @@ void App::InitModel(const char* path, ObjectType objectType, glm::vec3 position,
 
 Light* App::AddPointLight(glm::vec3 color, glm::vec3 position)
 {
-    Light* l = new Light(LightType::LT_POINT, color, position, glm::vec3(), 0);
+    Light* l = new Light(LightType::LT_POINT, color, position, glm::vec3(), 0, &globalBloom);
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Point Light";
@@ -408,7 +421,7 @@ Light* App::AddPointLight(glm::vec3 color, glm::vec3 position)
 
 Light* App::AddDirectLight(glm::vec3 color, glm::vec3 direction)
 {
-    Light* l = new Light(LightType::LT_DIRECTIONAL, color, glm::vec3(), direction, 0);
+    Light* l = new Light(LightType::LT_DIRECTIONAL, color, glm::vec3(), direction, 0, &globalBloom);
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Directional Light";
@@ -418,7 +431,7 @@ Light* App::AddDirectLight(glm::vec3 color, glm::vec3 direction)
 
 Light* App::AddSpotLight(glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff)
 {
-    Light* l = new Light(LightType::LT_SPOT, color, position, direction, cutoff);
+    Light* l = new Light(LightType::LT_SPOT, color, position, direction, cutoff, &globalBloom);
     lights.push_back(l);
     objects.push_back(l);
     l->name = "Spot Light";
@@ -455,6 +468,20 @@ void App::DeleteObject(intptr_t selected)
     objects.erase(objects.begin() + index);
     delete o;
 
+}
+
+void App::ActivateBloom(bool active)
+{
+    for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
+    {
+        (*it)->bloom = active;
+    }
+}
+
+glm::mat4 App::GlobalMatrix(glm::mat4 world)
+{
+    global = cam->projection * cam->view * world;
+    return global;
 }
 
 void Update(App* app)
@@ -527,13 +554,24 @@ void App::GUI()
             ImGui::Combo("##target", &currentRenderTarget, renderTargets, ARRAY_COUNT(renderTargets));
             ImGui::PopItemWidth();
 
-            if (currentRenderTarget == 5)
+            ImGui::Text("   Bloom:"); ImGui::SameLine();
+            if (ImGui::ToggleButton("##bloom", &globalBloom)) ActivateBloom(globalBloom);
+
+            if (renderTargets[currentRenderTarget] == "DEPTH")
             {
                 ImGui::Dummy(ImVec2(20, 0)); ImGui::SameLine();
                 ImGui::PushItemWidth(83);
                 ImGui::DragFloat("##near", &depthNear, 0.1f, 0.1f, 999999.f, "Near: %.1f"); ImGui::SameLine();
                 ImGui::DragFloat("##far", &depthFar, 0.1f, 0.1f, 999999.f, "Far: %.1f");
                 ImGui::PopItemWidth();
+            }
+            else if (renderTargets[currentRenderTarget] == "LIGHT")
+            {
+                ImGui::Dummy(ImVec2(20, 0)); ImGui::SameLine();
+                ImGui::PushItemWidth(120);
+                ImGui::DragFloat("##threshold", &threshold, 0.1f, 0, 3, "Thresh: %.1f"); ImGui::SameLine();
+                ImGui::PopItemWidth();
+                ImGui::Checkbox("B&W", &blackwhite);
             }
 
             ImGui::EndMenu();
@@ -575,7 +613,7 @@ void App::GUI()
                 ImGui::BulletText("Renderer  -> %s", openGLInformation.renderer);
                 ImGui::BulletText("Vendor    -> %s", openGLInformation.vendor);
                 ImGui::BulletText("Num Extns -> %d", openGLInformation.numExtensions);
-                if (ImGui::BeginMenu(" · Extensions"))
+                if (ImGui::BeginMenu(" ï¿½ Extensions"))
                 {
                     for (std::vector<const char*>::iterator it = openGLInformation.extensions.begin(); it != openGLInformation.extensions.end(); ++it)
                         ImGui::Text("%s", (*it));
@@ -636,18 +674,20 @@ void App::GUI()
 void App::Input()
 {
     if (!input.Active()) return;
+    float add = 1;
+    if (input.GetKey(K_SPACE)) add = 1.8;
 
     if (input.GetKey(K_A))
-        cam->Translate(-0.1, 0, 0);
+        cam->Translate(-0.2 * add, 0, 0);
 
     if (input.GetKey(K_D))
-        cam->Translate(0.1, 0, 0);
+        cam->Translate(0.2 * add, 0, 0);
 
     if (input.GetKey(K_W))
-        cam->Translate(0, 0, 0.1);
+        cam->Translate(0, 0, 0.2 * add);
 
     if (input.GetKey(K_S))
-        cam->Translate(0, 0, -0.1);
+        cam->Translate(0, 0, -0.2 * add);
 
     if (input.GetMouseButton(LEFT))
         cam->LookAt(input.mouseDelta, 0.1);
@@ -660,8 +700,50 @@ void Render(App* app)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     if (!app->deferred) app->RenderForward();
-    //else app->RenderDeferred2();
     else app->RenderDeferred();
+
+    app->RenderBloom();
+
+    app->RenderFrame();
+}
+
+void App::RenderFrame()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Draw Frame Buffer
+    {
+        GLuint program = programs[frameQuad->textureProgram]->handle;
+        // Get & Set the program to be used
+        glUseProgram(program);
+
+        // Bind the vao vertex array
+        glBindVertexArray(frameQuad->vao.handle);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget());
+        
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, blurBuffer.attachment[0]);
+        
+        glUniform1i(frameQuad->textureProgramUniform, 0);
+        
+        glUniform1i(glGetUniformLocation(program, "uBloom"), 1);
+
+        glUniform1i(glGetUniformLocation(program, "uApplyBloom"), currentRenderTarget == 0);
+
+        // Draw the elements to the screen
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
+        // Unbind the vertex array
+        glBindVertexArray(0);
+
+        // Unuse the program used
+        glUseProgram(0);
+    }
 }
 
 void App::RenderForward()
@@ -682,11 +764,13 @@ void App::RenderForward()
 
             // -- Global Parameters
             u32 globalParamsOffset = forwardConstBuffer.head;
-            PushVec3(forwardConstBuffer, cam->Position());
+            PushVec3 (forwardConstBuffer, cam->Position());
             PushFloat(forwardConstBuffer, ambient);
             PushFloat(forwardConstBuffer, depthNear);
             PushFloat(forwardConstBuffer, depthFar);
-            PushUInt(forwardConstBuffer, lights.size());
+            PushFloat(forwardConstBuffer, threshold);
+            PushBool (forwardConstBuffer, blackwhite);
+            PushUInt (forwardConstBuffer, lights.size());
 
             for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
             {
@@ -700,7 +784,9 @@ void App::RenderForward()
                 PushFloat(forwardConstBuffer, l->Cutoff());
                 PushFloat(forwardConstBuffer, l->OuterCuttoff());
                 PushFloat(forwardConstBuffer, l->intensity);
-                PushUInt(forwardConstBuffer, l->active);
+                PushBool(forwardConstBuffer, l->active);
+                PushBool(forwardConstBuffer, l->bloom);
+                PushFloat(forwardConstBuffer, l->bloomThreshold);
             }
 
             u32 globalParamsSize = forwardConstBuffer.head - globalParamsOffset;
@@ -804,179 +890,6 @@ void App::RenderForward()
     }
 
     {}
-
-    // Draw Frame Buffer
-    {
-        // Get & Set the program to be used
-        glUseProgram(programs[frameQuad->textureProgram]->handle);
-
-        // Bind the vao vertex array
-        glBindVertexArray(frameQuad->vao.handle);
-
-        // Send the texture as uniform variable to glsl script
-        glUniform1i(frameQuad->textureProgramUniform, 0);
-        // Activate slot for a texture
-        glActiveTexture(GL_TEXTURE0);
-
-        // Bind the texture of the dice
-        glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget(false));
-
-        // Draw the elements to the screen
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-        // Unbind the vertex array
-        glBindVertexArray(0);
-
-        // Unuse the program used
-        glUseProgram(0);
-    }
-}
-
-void App::RenderDeferred2()
-{
-    // Forward Frame Buffer
-    {
-        // Bind the buffer
-        glBindFramebuffer(GL_FRAMEBUFFER, gBuffer.handle);
-
-        glClearColor(0, 0, 0, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Uniforms
-        {
-            // Fill Uniform Buffer once per update
-            BindBuffer(deferredGConstBuffer);
-            MapBuffer(deferredGConstBuffer, GL_WRITE_ONLY);
-
-            // -- Local Parameters
-            u32 localParamsFullSize = 0;
-            for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
-            {
-                Object* o = (*it);
-                if (o->Type() == ObjectType::O_LIGHT) continue;
-
-                AlignHead(deferredGConstBuffer, GetUniformBlockAlignment());
-
-                o->localParamsOffset = deferredGConstBuffer.head;
-                PushMat4(deferredGConstBuffer, o->world);
-                PushMat4(deferredGConstBuffer, GlobalMatrix(o->world));
-
-                o->localParamsSize = deferredGConstBuffer.head - o->localParamsOffset;
-                localParamsFullSize += o->localParamsSize;
-            }
-
-            UnmapBuffer(deferredGConstBuffer);
-            UnbindBuffer(deferredGConstBuffer);
-            ///////////////////
-        }
-
-        // Draw 3D Geometry
-        for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
-        {
-            Object* o = (*it);
-            if (!o->active) continue;
-
-            switch (o->Type())
-            {
-            case ObjectType::O_TEXTURED_QUAD:
-            {
-                TexturedQuad* tQ = (TexturedQuad*)o;
-                // Get & Set the program to be used
-                glUseProgram(programs[tQ->textureProgram]->handle);
-                // Bind the vao vertex array
-                glBindVertexArray(tQ->vao.handle);
-
-                // Send the texture as uniform variable to glsl script
-                glUniform1i(tQ->textureProgramUniform, 0);
-                // Activate slot for a texture
-                glActiveTexture(GL_TEXTURE0);
-
-                // Bind the texture of the dice
-                glBindTexture(GL_TEXTURE_2D, textures[tQ->texture]->handle);
-
-                // Draw the elements to the screen
-                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-                // Unbind the vertex array
-                glBindVertexArray(0);
-                // Unuse the program used
-                glUseProgram(0);
-
-                break;
-            }
-
-            case ObjectType::O_MODEL:
-            {
-                Model* m = (Model*)o;
-
-                BindBufferRange(deferredGConstBuffer, BINDING(1), o->localParamsOffset, o->localParamsSize); // Binding Local Params
-
-                glUseProgram(programs[m->deferredProgram]->handle);
-
-                unsigned int size = m->meshes.size();
-                for (u32 i = 0; i < size; ++i)
-                {
-                    GLuint vao = m->FindVAO(i, programs[m->deferredProgram]);
-                    glBindVertexArray(vao);
-
-                    Material* mat = materials[m->materials[i]];
-
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, textures[mat->diffuseTex]->handle);
-                    glUniform1i(m->texUniformDeferred, 0);
-
-                    Mesh* mesh = m->meshes[i];
-                    glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
-
-                    glBindVertexArray(0);
-                }
-
-                glUseProgram(0);
-
-                break;
-            }
-
-            default: break;
-            }
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    {}
-
-    // Draw Frame Buffer
-    {
-    // Get & Set the program to be used
-    glUseProgram(programs[frameQuad->textureProgram]->handle);
-
-    // Bind the vao vertex array
-    glBindVertexArray(frameQuad->vao.handle);
-
-    // Send the texture as uniform variable to glsl script
-    glUniform1i(frameQuad->textureProgramUniform, 0);
-    // Activate slot for a texture
-    glActiveTexture(GL_TEXTURE0);
-
-    // Bind the texture of the dice
-    glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget(true));
-
-    // Draw the elements to the screen
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-    // Unbind the vertex array
-    glBindVertexArray(0);
-
-    // Unuse the program used
-    glUseProgram(0);
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer.handle);
-
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void App::RenderDeferred()
@@ -995,13 +908,6 @@ void App::RenderDeferred()
             BindBuffer(deferredGConstBuffer);
             MapBuffer(deferredGConstBuffer, GL_WRITE_ONLY);
 
-            // -- Global Parameters
-            u32 globalParamsOffset = deferredGConstBuffer.head;
-            PushFloat(deferredGConstBuffer, depthNear);
-            PushFloat(deferredGConstBuffer, depthFar);
-
-            u32 globalParamsSize = deferredGConstBuffer.head - globalParamsOffset;
-
             // -- Local Parameters
             u32 localParamsFullSize = 0;
             for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
@@ -1021,8 +927,6 @@ void App::RenderDeferred()
 
             UnmapBuffer(deferredGConstBuffer);
             UnbindBuffer(deferredGConstBuffer);
-
-            BindBufferRange(deferredGConstBuffer, BINDING(0), 0, globalParamsSize); // Binding Global Params
 
             ///////////////////
         }
@@ -1123,11 +1027,13 @@ void App::RenderDeferred()
 
             // -- Global Parameters
             u32 globalParamsOffset = deferredLConstBuffer.head;
-            PushVec3(deferredLConstBuffer, cam->Position());
+            PushVec3 (deferredLConstBuffer, cam->Position());
             PushFloat(deferredLConstBuffer, ambient);
             PushFloat(deferredLConstBuffer, depthNear);
             PushFloat(deferredLConstBuffer, depthFar);
-            PushUInt(deferredLConstBuffer, lights.size());
+            PushFloat(deferredLConstBuffer, threshold);
+            PushBool (deferredLConstBuffer, blackwhite);
+            PushUInt (deferredLConstBuffer, lights.size());
 
             for (std::vector<Light*>::iterator it = lights.begin(); it != lights.end(); ++it)
             {
@@ -1141,7 +1047,9 @@ void App::RenderDeferred()
                 PushFloat(deferredLConstBuffer, l->Cutoff());
                 PushFloat(deferredLConstBuffer, l->OuterCuttoff());
                 PushFloat(deferredLConstBuffer, l->intensity);
-                PushUInt(deferredLConstBuffer, l->active);
+                PushBool(deferredLConstBuffer, l->active);
+                PushBool(deferredLConstBuffer, l->bloom);
+                PushFloat(deferredLConstBuffer, l->bloomThreshold);
             }
 
             u32 globalParamsSize = deferredLConstBuffer.head - globalParamsOffset;
@@ -1154,28 +1062,28 @@ void App::RenderDeferred()
             ///////////////////
         }
 
-        GLuint pHandle = programs[deferredQuad->lightingPassProgram]->handle;
+        GLuint pHandle = programs[frameQuad->lightingPassProgram]->handle;
         glUseProgram(pHandle);
 
         // Bind the vao vertex array
-        glBindVertexArray(deferredQuad->vao.handle);
+        glBindVertexArray(frameQuad->vao.handle);
 
-        glUniform1i(glGetUniformLocation(pHandle, "gFinal"),    0);
-        glUniform1i(glGetUniformLocation(pHandle, "gSpecular"), 1);
-        glUniform1i(glGetUniformLocation(pHandle, "gNormals"),  2);
-        glUniform1i(glGetUniformLocation(pHandle, "gPosition"), 3);
-        glUniform1i(glGetUniformLocation(pHandle, "gAlbedo"),   4);
+        glUniform1i(glGetUniformLocation(pHandle, "gSpecular"), 0);
+        glUniform1i(glGetUniformLocation(pHandle, "gNormals"),  1);
+        glUniform1i(glGetUniformLocation(pHandle, "gPosition"), 2);
+        glUniform1i(glGetUniformLocation(pHandle, "gAlbedo"),   3);
+        glUniform1i(glGetUniformLocation(pHandle, "gDepth"),    4);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gBuffer.finalAttachHandle);
-        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, gBuffer.specularAttachHandle);
-        glActiveTexture(GL_TEXTURE2);
+        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, gBuffer.normalsAttachHandle);
-        glActiveTexture(GL_TEXTURE3);
+        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, gBuffer.positionAttachHandle);
-        glActiveTexture(GL_TEXTURE4);
+        glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, gBuffer.albedoAttachHandle);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.depthAttachHandle);
 
         // Draw the elements to the screen
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
@@ -1189,31 +1097,56 @@ void App::RenderDeferred()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    // Draw Frame Buffer
+}
+
+void App::RenderBloom()
+{
+    if (!globalBloom)
     {
-        // Get & Set the program to be used
-        glUseProgram(programs[frameQuad->textureProgram]->handle);
+        glBindFramebuffer(GL_FRAMEBUFFER, blurBuffer.handle[0]);
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glBindFramebuffer(GL_FRAMEBUFFER, blurBuffer.handle[1]);
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 
-        // Bind the vao vertex array
-        glBindVertexArray(frameQuad->vao.handle);
+    bool horizontal = true;
 
-        // Send the texture as uniform variable to glsl script
-        glUniform1i(frameQuad->textureProgramUniform, 0);
-        // Activate slot for a texture
+    GLuint blurProgram = programs[frameQuad->bloomProgram]->handle;
+    glUseProgram(blurProgram);
+
+    glBindVertexArray(frameQuad->vao.handle);
+
+    for (unsigned int i = 0; i < 10; ++i)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, blurBuffer.handle[horizontal]);
+
+        if (i < 2)
+        {
+            glClearColor(0, 0, 0, 1);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
+
+        glUniform1i(glGetUniformLocation(blurProgram, "horizontal"), horizontal);
         glActiveTexture(GL_TEXTURE0);
-
-        // Bind the texture of the dice
-        glBindTexture(GL_TEXTURE_2D, CurrentRenderTarget(true));
+        glBindTexture(GL_TEXTURE_2D, i == 0 ? frameBuffer.bloomAttachHandle : blurBuffer.attachment[!horizontal]);
 
         // Draw the elements to the screen
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
 
-        // Unbind the vertex array
-        glBindVertexArray(0);
-
-        // Unuse the program used
-        glUseProgram(0);
+        horizontal = !horizontal;
     }
+
+    // Unbind the vertex array
+    glBindVertexArray(0);
+
+    // Unuse the program used
+    glUseProgram(0);
+
+    // Unbind the buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void App::HotReload()

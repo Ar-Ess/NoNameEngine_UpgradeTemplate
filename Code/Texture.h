@@ -1,8 +1,10 @@
 #pragma once
 #include <string>
 
-struct Texture
+class Texture
 {
+public:
+
     ~Texture()
     {
         filepath.clear();

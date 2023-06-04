@@ -4,8 +4,10 @@
 
 typedef std::vector<VertexShaderAttribute*> VertexShaderLayout;
 
-struct Program
+class Program
 {
+public:
+
     ~Program()
     {
         filepath.clear();

@@ -8,13 +8,15 @@ enum class LightType
 	LT_SPOT
 };
 
-struct Light : public Object
+class Light : public Object
 {
+public:
 
-	Light(LightType type, glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff) : 
+	Light(LightType type, glm::vec3 color, glm::vec3 position, glm::vec3 direction, float cutoff, bool* globalBloom) : 
 		type(type), color(color), direction(glm::normalize(direction)), cutoff(cutoff), Object(ObjectType::O_LIGHT)
 	{
 		this->position = position;
+		this->globalBloom = globalBloom;
 	}
 
 	bool DrawGui() override
@@ -51,6 +53,13 @@ struct Light : public Object
 			Draw3Float("Color:", &color, 0.01, 0, 1, "R: %.2f", "G: %.2f", "B: %.2f");
 		}
 
+		if (ImGui::Checkbox("##bloom", &bloom) && bloom) *globalBloom = true;
+		ImGui::SameLine();
+		if (ImGui::CollapsingHeader("Bloom"))
+		{
+			DrawFloat("Threshold:", &bloomThreshold, 0.01, 0.1, 3);
+		}
+
 		return change;
 	}
 
@@ -69,10 +78,13 @@ struct Light : public Object
 	glm::vec3 color = glm::vec3(1, 1, 1);
 	glm::vec3 direction;
 	float intensity = 1;
+	bool bloom = true;
+	float bloomThreshold = 0.5;
 
 private:
 
 	float softness = 0;
 	float cutoff = 0;
+	bool* globalBloom = nullptr;
 
 };

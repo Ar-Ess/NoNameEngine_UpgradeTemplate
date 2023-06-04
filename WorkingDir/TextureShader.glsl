@@ -24,12 +24,34 @@ in vec2 vTexCoord;
 // getting the id of the texture using -> glGetUniformLocation(texturedGeometryProgram.handle, "uTexture");
 // sending the texture data glUniform1i(app->programUniformTexture, 0);
 uniform sampler2D uTexture;
+uniform sampler2D uBloom;
+uniform bool uApplyBloom;
+float exposure = 0.5;
 
 layout(location=0) out vec4 fragColor;
 
 void main()
 {
-	fragColor = texture(uTexture, vTexCoord);
+	const float gamma = 2.2;
+	vec3 tex = texture(uTexture, vTexCoord).rgb;
+	vec4 texBloom = texture(uBloom, vTexCoord);
+	vec3 bloom = texBloom.rgb;
+
+	if (texBloom.w == 0 || !uApplyBloom)
+	{
+		fragColor = vec4(tex, 1);
+		return;
+	}
+
+	// Additive blending
+	tex += bloom;
+
+    // Tone mapping
+    vec3 result = vec3(1.0) - exp(-tex * exposure);
+
+    // Gamma correction     
+    result = pow(result, vec3(1.0 / gamma));
+    fragColor = vec4(result, 1.0);
 }
 
 #endif

@@ -33,6 +33,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\AssimpLoading.h" />
+    <ClInclude Include="Code\BlurBuffer.h" />
     <ClInclude Include="Code\Buffer.h" />
     <ClInclude Include="Code\BufferManagement.h" />
     <ClInclude Include="Code\Camera.h" />
@@ -73,6 +74,7 @@
     <ClInclude Include="WindowParams.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="WorkingDir\GausianBlurShader.glsl" />
     <None Include="WorkingDir\LightingPassShader.glsl" />
     <None Include="WorkingDir\ForwardShader.glsl" />
     <None Include="WorkingDir\GeometryPassShader.glsl" />
