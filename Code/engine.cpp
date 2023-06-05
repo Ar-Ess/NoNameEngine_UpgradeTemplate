@@ -206,6 +206,7 @@ void Init(App* app)
     app->gBuffer     = CreateGeometryBuffer(app->displaySize);
     app->frameBuffer = CreateFrameBuffer(app->displaySize);
     app->blurBuffer  = CreateBlurBuffer (app->displaySize);
+    app->waterBuffer = CreateWaterBuffer(app->displaySize);
 
     // Create TexturedQuads to draw Frame Buffers
     app->frameQuad   = app->InitTexturedQuad(nullptr);
@@ -403,8 +404,6 @@ void App::InitWater(glm::vec3 position, float scale)
     w->position = position;
     w->scale = vec3(scale);
     w->UpdateTransform();
-
-    w->buffer = CreateWaterBuffer(displaySize);
 
     objects.push_back(w);
     waters.push_back(w);
@@ -1104,9 +1103,20 @@ void App::RenderWater()
 
     glEnable(GL_CLIP_DISTANCE0);
 
-    for (std::vector<Water*>::iterator it = waters.begin(); it != waters.end(); ++it)
+    bool first = true;
+
+    GLuint program = programs[waterShaders[0]]->handle;
+    glUseProgram(program);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, waterBuffer.handle[WBT_REFLECTION]);
+
+    for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
     {
-        Water* w = (*it);
+        Object* o = (*it);
+        
+        if (o->Type() != ObjectType::O_MODEL) continue;
+
+        Model* m = (Model*)o;
 
         // Uniforms
         {
@@ -1115,8 +1125,8 @@ void App::RenderWater()
 
             u32 globalParamsOffset = waterConstBuffer.head;
 
-            PushMat4(waterConstBuffer, w->plane->world);
-            PushMat4(waterConstBuffer, GlobalMatrix(w->plane->world));
+            PushMat4(waterConstBuffer, m->world);
+            PushMat4(waterConstBuffer, GlobalMatrix(m->world));
 
             AlignHead(waterConstBuffer, sizeof(glm::vec4));
 
@@ -1130,78 +1140,37 @@ void App::RenderWater()
 
         // REFLECTIONS =================================================
 
-        // TODO: Add this in app, don't need to be in every water object.
-        // Then put it outside the for loop, and also the glUseProgram(0)
+        if (first)
+        {
+            glClearColor(0, 0, 0, 1);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            first = false;
+        }
 
-        GLuint program = programs[waterShaders[0]]->handle;
-        glUseProgram(program);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, w->buffer.handle[WBT_REFLECTION]);
-
-        glClearColor(0, 0, 0, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // REFLECTIONS CODE
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gBuffer.albedoAttachHandle);
-
-        glUniform1i(waterUniform[0], 0);
-
-        glUniform1i(glGetUniformLocation(program, "uReflection"), true);
-
-        unsigned int size = w->plane->meshes.size();
+        unsigned int size = m->meshes.size();
         for (u32 i = 0; i < size; ++i)
         {
-            GLuint vao = w->plane->FindVAO(i, programs[waterShaders[0]]);
+            GLuint vao = m->FindVAO(i, programs[waterShaders[0]]);
             glBindVertexArray(vao);
 
-            Mesh* mesh = w->plane->meshes[i];
+            Material* mat = materials[m->materials[i]];
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textures[mat->diffuseTex]->handle);
+
+            glUniform1i(waterUniform[0], 0);
+
+            glUniform1i(glGetUniformLocation(program, "uReflection"), true);
+
+            Mesh* mesh = m->meshes[i];
             glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
 
             glBindVertexArray(0);
         }
-
-        glUseProgram(0);
 
         // REFRACTIONS =========================================================
 
-        // TODO: Add this in app, don't need to be in every water object.
-        // Then put it outside the for loop, and also the glUseProgram(0)
-        glUseProgram(program);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, w->buffer.handle[WBT_REFRACTION]);
-
-        glClearColor(0, 0, 0, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // REFRACTIONS CODE
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gBuffer.albedoAttachHandle);
-
-        glUniform1i(waterUniform[0], 0);
-
-        glUniform1i(glGetUniformLocation(program, "uReflection"), false);
-
-        size = w->plane->meshes.size();
-        for (u32 i = 0; i < size; ++i)
-        {
-            GLuint vao = w->plane->FindVAO(i, programs[waterShaders[0]]);
-            glBindVertexArray(vao);
-
-            Mesh* mesh = w->plane->meshes[i];
-            glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
-
-            glBindVertexArray(0);
-        }
-
-        glUseProgram(0);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
-
-    glBindVertexArray(0);
 
     glUseProgram(0);
 

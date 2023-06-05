@@ -14,7 +14,4 @@ struct WaterBuffer
     GLuint depthAttachHandle[2] = {};
 
     GLuint handle[2] = {};
-    GLuint waterHadle = 0;
-
-    GLuint finalAttachHandle = 0;
 };

@@ -287,33 +287,35 @@ void InitWaterBuffer(WaterBuffer& buffer)
         buffer.handle[i] = handle;
     }
 
-    handle = 0;
-    glGenFramebuffers(1, &handle);
-    glBindFramebuffer(GL_FRAMEBUFFER, handle);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer.finalAttachHandle, 0);
-    //glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, buffer.depthAttachHandle[i], 0);
+    // TODO: put this on its pertinent site, in a water object maybe
 
-    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE)
-    {
-        switch (status)
-        {
-        case GL_FRAMEBUFFER_UNDEFINED:                     ELOG("GL_FRAMEBUFFER_UNDEFINED                    "); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT        "); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER       "); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER       "); break;
-        case GL_FRAMEBUFFER_UNSUPPORTED:                   ELOG("GL_FRAMEBUFFER_UNSUPPORTED                  "); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE       "); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:      ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS     "); break;
-        default: ELOG("Unknoen framebuffer status error"); break;
-        }
-    }
-
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    buffer.waterHadle = handle;
+    //handle = 0;
+    //glGenFramebuffers(1, &handle);
+    //glBindFramebuffer(GL_FRAMEBUFFER, handle);
+    //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, buffer.finalAttachHandle, 0);
+    ////glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, buffer.depthAttachHandle[i], 0);
+    //
+    //GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    //if (status != GL_FRAMEBUFFER_COMPLETE)
+    //{
+    //    switch (status)
+    //    {
+    //    case GL_FRAMEBUFFER_UNDEFINED:                     ELOG("GL_FRAMEBUFFER_UNDEFINED                    "); break;
+    //    case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT        "); break;
+    //    case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+    //    case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER       "); break;
+    //    case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER       "); break;
+    //    case GL_FRAMEBUFFER_UNSUPPORTED:                   ELOG("GL_FRAMEBUFFER_UNSUPPORTED                  "); break;
+    //    case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:        ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE       "); break;
+    //    case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:      ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS     "); break;
+    //    default: ELOG("Unknoen framebuffer status error"); break;
+    //    }
+    //}
+    //
+    //glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //
+    //buffer.waterHadle = handle;
 }
 
 WaterBuffer CreateWaterBuffer(ivec2 display)
@@ -326,7 +328,7 @@ WaterBuffer CreateWaterBuffer(ivec2 display)
     buffer.depthAttachHandle[WBT_REFLECTION] = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display, GL_FLOAT, GL_DEPTH_COMPONENT24);
     buffer.depthAttachHandle[WBT_REFRACTION] = CreateFrameBufferAttachement(GL_DEPTH_COMPONENT, display, GL_FLOAT, GL_DEPTH_COMPONENT24);
 
-    buffer.finalAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT, GL_RGB16F);
+    //buffer.finalAttachHandle = CreateFrameBufferAttachement(GL_RGBA, display, GL_FLOAT, GL_RGB16F);
 
     InitWaterBuffer(buffer);
 

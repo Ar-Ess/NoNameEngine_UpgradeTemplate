@@ -16,21 +16,26 @@ layout(binding = 2, std140) uniform GlobalParams
 
 out vec2 vTexCoord;
 
+uniform bool uReflection;
+
 void main()
 {
 	vTexCoord   = aTexCoord;
-	gl_Position = uGlobalMatrix * vec4(aPosition, 1.0);
+	vec3 positionWorldSpace = vec3( uWorldMatrix * vec4(aPosition, 1.0) );
 
+	if (uReflection) gl_ClipDistance[0] = dot(vec4(positionWorldSpace, 1.0), vec4(0,  1, 0, 0));
+	else gl_ClipDistance[0] = dot(vec4(positionWorldSpace, 1.0), vec4(0,  -1, 0, 0));
+
+	gl_Position = uGlobalMatrix * vec4(aPosition, 1.0);
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
-uniform bool uReflection;
 uniform sampler2D uTexture;
 
 in vec2 vTexCoord;
 
-layout(location=0) out vec4 final;
+layout(location=0) out vec4 albedo;
 
 layout(binding = 2, std140) uniform GlobalParams
 {
@@ -41,7 +46,7 @@ layout(binding = 2, std140) uniform GlobalParams
 void main()
 {
 	vec3 color = texture(uTexture, vTexCoord).rgb;
-	final = vec4(color + vec3(0.05, 0.05, 0.1f), 1);
+	albedo = vec4(color + vec3(0.05, 0.05, 0.1f), 1);
 }
 
 #endif

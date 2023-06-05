@@ -2,9 +2,7 @@
 #include "Object.h"
 #include "Mesh.h"
 #include "WaterBuffer.h"
-//jaume
 #include "Model.h"
-//class Model;
 
 enum class WaterType 
 {
@@ -70,8 +68,6 @@ private:
 	float densityFactor = 0.5f;
 
 public:
-
-	WaterBuffer buffer;
 
 	Model* plane = nullptr;
 

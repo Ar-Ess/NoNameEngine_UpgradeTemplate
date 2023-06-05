@@ -90,6 +90,7 @@ public:
     TexturedQuad* frameQuad = nullptr;
 
     // Water
+    WaterBuffer waterBuffer;
     GLuint waterShaders[2] = { 0, 0 };
     GLuint waterUniform[2] = { 0, 0 };
 
@@ -124,8 +125,8 @@ public:
             case 5:  ret = frameBuffer.lightAttachHandle; break;
             case 6:  ret = blurBuffer.attachment[0]; break;
             case 7:  ret = frameBuffer.depthAttachHandle; break;
-            case 8:  ret = waters[0]->buffer.albedoAttachHandle[WBT_REFLECTION];
-            case 9:  ret = waters[0]->buffer.albedoAttachHandle[WBT_REFRACTION];
+            case 8:  ret = waterBuffer.albedoAttachHandle[WBT_REFLECTION]; break;
+            case 9:  ret = waterBuffer.albedoAttachHandle[WBT_REFRACTION]; break;
         }
 
         return ret;
