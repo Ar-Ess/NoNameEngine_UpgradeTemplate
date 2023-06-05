@@ -89,6 +89,10 @@ public:
     BlurBuffer  blurBuffer;
     TexturedQuad* frameQuad = nullptr;
 
+    // Water
+    GLuint waterShaders[2] = { 0, 0 };
+    GLuint waterUniform[2] = { 0, 0 };
+
     // Camera
     glm::mat4 GlobalMatrix(glm::mat4 world);
     Camera* cam = nullptr;

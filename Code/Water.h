@@ -75,19 +75,4 @@ public:
 
 	Model* plane = nullptr;
 
-	GLuint waterBuildProgram;
-	GLuint waterPassProgram;
-
-	GLuint texUniformBuild;
-	GLuint texUniformPass;
-
-	//// programs[this->forwardProgram]->handle
-	//GLuint forwardProgram = 0;
-
-	//// programs[this->deferredProgram]->handle
-	//GLuint deferredProgram = 0;
-
-	//GLuint texUniformForward = 0;
-	//GLuint texUniformDeferred = 0;
-
 };

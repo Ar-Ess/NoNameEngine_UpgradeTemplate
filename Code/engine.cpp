@@ -358,39 +358,42 @@ void App::InitModel(const char* path, glm::vec3 position, float scale)
 
 void App::InitWater(glm::vec3 position, float scale)
 {
-    u32 programWB = LoadProgram(this, "WaterBuildShader.glsl", "WATER_BUILD");
-    u32 programWP = LoadProgram(this, "WaterPassShader.glsl", "WATER_PASS");
-    
-    Program* pWB = programs[programWB];
-    GLuint texUniformWB = glGetUniformLocation(pWB->handle, "uTexture");
+    if (waterShaders[0] == 0 && waterShaders[1] == 0)
+    {
+        waterShaders[0] = LoadProgram(this, "WaterBuildShader.glsl", "WATER_BUILD");
+        waterShaders[1] = LoadProgram(this, "WaterPassShader.glsl", "WATER_PASS");
 
-    Program* pWP = programs[programWP];
-    GLuint texUniformWP = glGetUniformLocation(pWP->handle, "uTexture");
-    
-    GLsizei size = 0;
-    glGetProgramiv(pWB->handle, GL_ACTIVE_ATTRIBUTES, &size);
-    for (unsigned int i = 0; i < size; ++i)
-    {
-        char attribName[200] = {};
-        GLsizei attribLength = 0;
-        GLint attribSize = 0;
-        GLenum attribType = 0;
-        glGetActiveAttrib(pWB->handle, i, ARRAY_COUNT(attribName), &attribLength, &attribSize, &attribType, attribName);
-    
-        pWB->attributes.emplace_back(new VertexShaderAttribute(glGetAttribLocation(pWB->handle, attribName), attribSize));
-    }
-    
-    size = 0;
-    glGetProgramiv(pWP->handle, GL_ACTIVE_ATTRIBUTES, &size);
-    for (unsigned int i = 0; i < size; ++i)
-    {
-        char attribName[200] = {};
-        GLsizei attribLength = 0;
-        GLint attribSize = 0;
-        GLenum attribType = 0;
-        glGetActiveAttrib(pWP->handle, i, ARRAY_COUNT(attribName), &attribLength, &attribSize, &attribType, attribName);
-    
-        pWP->attributes.emplace_back(new VertexShaderAttribute(glGetAttribLocation(pWP->handle, attribName), attribSize));
+        Program* pWB = programs[waterShaders[0]];
+        waterUniform[0] = glGetUniformLocation(pWB->handle, "uTexture");
+
+        Program* pWP = programs[waterShaders[1]];
+        waterUniform[1] = glGetUniformLocation(pWP->handle, "uTexture");
+
+        GLsizei size = 0;
+        glGetProgramiv(pWB->handle, GL_ACTIVE_ATTRIBUTES, &size);
+        for (unsigned int i = 0; i < size; ++i)
+        {
+            char attribName[200] = {};
+            GLsizei attribLength = 0;
+            GLint attribSize = 0;
+            GLenum attribType = 0;
+            glGetActiveAttrib(pWB->handle, i, ARRAY_COUNT(attribName), &attribLength, &attribSize, &attribType, attribName);
+
+            pWB->attributes.emplace_back(new VertexShaderAttribute(glGetAttribLocation(pWB->handle, attribName), attribSize));
+        }
+
+        size = 0;
+        glGetProgramiv(pWP->handle, GL_ACTIVE_ATTRIBUTES, &size);
+        for (unsigned int i = 0; i < size; ++i)
+        {
+            char attribName[200] = {};
+            GLsizei attribLength = 0;
+            GLint attribSize = 0;
+            GLenum attribType = 0;
+            glGetActiveAttrib(pWP->handle, i, ARRAY_COUNT(attribName), &attribLength, &attribSize, &attribType, attribName);
+
+            pWP->attributes.emplace_back(new VertexShaderAttribute(glGetAttribLocation(pWP->handle, attribName), attribSize));
+        }
     }
 
     Water* w = new Water();
@@ -402,12 +405,6 @@ void App::InitWater(glm::vec3 position, float scale)
     w->UpdateTransform();
 
     w->buffer = CreateWaterBuffer(displaySize);
-
-    w->waterBuildProgram = programWB;
-    w->waterPassProgram = programWP;
-
-    w->texUniformBuild = texUniformWB;
-    w->texUniformPass = texUniformWP;
 
     objects.push_back(w);
     waters.push_back(w);
@@ -1137,7 +1134,7 @@ void App::RenderWater()
         // TODO: Add this in app, don't need to be in every water object.
         // Then put it outside the for loop, and also the glUseProgram(0)
 
-        GLuint program = programs[w->waterBuildProgram]->handle;
+        GLuint program = programs[waterShaders[0]]->handle;
         glUseProgram(program);
 
         glBindFramebuffer(GL_FRAMEBUFFER, w->buffer.handle[WBT_REFLECTION]);
@@ -1150,7 +1147,7 @@ void App::RenderWater()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, gBuffer.albedoAttachHandle);
 
-        glUniform1i(w->texUniformBuild, 0);
+        glUniform1i(waterUniform[0], 0);
 
         glUniform1i(glGetUniformLocation(program, "uReflection"), true);
 
@@ -1159,7 +1156,7 @@ void App::RenderWater()
         unsigned int size = w->plane->meshes.size();
         for (u32 i = 0; i < size; ++i)
         {
-            GLuint vao = w->plane->FindVAO(i, programs[w->waterBuildProgram]);
+            GLuint vao = w->plane->FindVAO(i, programs[waterShaders[0]]);
             glBindVertexArray(vao);
 
             Mesh* mesh = w->plane->meshes[i];
@@ -1186,7 +1183,7 @@ void App::RenderWater()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, gBuffer.albedoAttachHandle);
 
-        glUniform1i(w->texUniformBuild, 0);
+        glUniform1i(waterUniform[0], 0);
 
         glUniform1i(glGetUniformLocation(program, "uReflection"), false);
 
@@ -1195,7 +1192,7 @@ void App::RenderWater()
         size = w->plane->meshes.size();
         for (u32 i = 0; i < size; ++i)
         {
-            GLuint vao = w->plane->FindVAO(i, programs[w->waterBuildProgram]);
+            GLuint vao = w->plane->FindVAO(i, programs[waterShaders[0]]);
             glBindVertexArray(vao);
 
             Mesh* mesh = w->plane->meshes[i];
