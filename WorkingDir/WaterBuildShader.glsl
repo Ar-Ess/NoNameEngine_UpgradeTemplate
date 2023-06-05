@@ -22,10 +22,14 @@ uniform float uHeight;
 void main()
 {
 	vTexCoord   = aTexCoord;
-	vec3 positionWorldSpace = vec3( uWorldMatrix * vec4(aPosition, 1.0) );
+	vec3 positionWorldspace = vec3( uWorldMatrix * vec4(aPosition, 1.0) );
+	float clipDistanceDisplacement = length(positionWorldspace) / 100;
 
-	if (uReflection) gl_ClipDistance[0] = dot(vec4(positionWorldSpace, 1.0), vec4(0,  1, 0, -uHeight));
-	else gl_ClipDistance[0] = dot(vec4(positionWorldSpace, 1.0), vec4(0,  -1, 0, uHeight));
+	if (uReflection) 
+		gl_ClipDistance[0] = dot(vec4(positionWorldspace, 1.0), vec4(0,   1, 0, -uHeight + clipDistanceDisplacement));
+
+	else             
+		gl_ClipDistance[0] = dot(vec4(positionWorldspace, 1.0), vec4(0,  -1, 0,  uHeight + clipDistanceDisplacement));
 
 	gl_Position = uGlobalMatrix * vec4(aPosition, 1.0);
 }

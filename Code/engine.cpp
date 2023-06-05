@@ -1101,6 +1101,7 @@ void App::RenderWater()
 {
     if (waters.empty()) return;
 
+    // CREATE CLIPPING PLANES
     glEnable(GL_CLIP_DISTANCE0);
 
     bool first = true;
@@ -1209,6 +1210,10 @@ void App::RenderWater()
     glUseProgram(0);
 
     glDisable(GL_CLIP_DISTANCE0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
