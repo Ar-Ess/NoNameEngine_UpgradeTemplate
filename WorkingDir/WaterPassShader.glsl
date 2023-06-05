@@ -72,7 +72,7 @@ vec3 ReconstructPixelPosition(float depth)
 
 void main()
 {
-	normals  = vec4(vNormal,   1);
+	normals  = vec4(normalize(texture(uNormalMap, vTexCoord).rgb),   1);
     position = vec4(vPosition, 1);
 	specular = vec4(vec3(0.5), 1);
 	//gl_FragDepth = gl_FragCoord.z; Not this one, or maybe yes? To determine
