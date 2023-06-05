@@ -395,6 +395,9 @@ void App::InitWater(glm::vec3 position, float scale)
 
             pWP->attributes.emplace_back(new VertexShaderAttribute(glGetAttribLocation(pWP->handle, attribName), attribSize));
         }
+
+        waterBuffer.normalsTexIndex = LoadTexture2D(this, "water_normal_map.jpg");
+        waterBuffer.distortTexIndex = LoadTexture2D(this, "water_dudv_map.png");
     }
 
     Water* w = new Water();
@@ -1101,121 +1104,205 @@ void App::RenderWater()
 {
     if (waters.empty()) return;
 
-    // CREATE CLIPPING PLANES
-    glEnable(GL_CLIP_DISTANCE0);
-
-    bool first = true;
-
-    GLuint program = programs[waterShaders[0]]->handle;
-    glUseProgram(program);
-
-    for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
+    // CREATE CLIPPING PLANES ===============================================
+    //TODO: Change WaterBuildShader to WaterClipShader
     {
-        Object* o = (*it);
-        
-        if (o->Type() != ObjectType::O_MODEL) continue;
+        glEnable(GL_CLIP_DISTANCE0);
 
-        Model* m = (Model*)o;
+        bool first = true;
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        GLuint program = programs[waterShaders[0]]->handle;
+        glUseProgram(program);
 
-        // Uniforms
+        for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
         {
-            BindBuffer(waterConstBuffer);
-            MapBuffer(waterConstBuffer, GL_WRITE_ONLY);
+            Object* o = (*it);
 
-            u32 globalParamsOffset = waterConstBuffer.head;
+            if (o->Type() != ObjectType::O_MODEL) continue;
 
-            PushMat4(waterConstBuffer, m->world);
-            PushMat4(waterConstBuffer, GlobalMatrix(m->world));
+            Model* m = (Model*)o;
 
-            AlignHead(waterConstBuffer, sizeof(glm::vec4));
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            u32 globalParamsSize = waterConstBuffer.head - globalParamsOffset;
+            // Uniforms
+            {
+                BindBuffer(waterConstBuffer);
+                MapBuffer(waterConstBuffer, GL_WRITE_ONLY);
 
-            UnmapBuffer(waterConstBuffer);
-            UnbindBuffer(waterConstBuffer);
+                u32 globalParamsOffset = waterConstBuffer.head;
 
-            BindBufferRange(waterConstBuffer, BINDING(2), 0, globalParamsSize); // Binding Global Params
+                PushMat4(waterConstBuffer, m->world);
+                PushMat4(waterConstBuffer, GlobalMatrix(m->world));
+
+                AlignHead(waterConstBuffer, sizeof(glm::vec4));
+
+                u32 globalParamsSize = waterConstBuffer.head - globalParamsOffset;
+
+                UnmapBuffer(waterConstBuffer);
+                UnbindBuffer(waterConstBuffer);
+
+                BindBufferRange(waterConstBuffer, BINDING(2), 0, globalParamsSize); // Binding Global Params
+            }
+
+            // REFLECTIONS =================================================
+
+            glBindFramebuffer(GL_FRAMEBUFFER, waterBuffer.handle[WBT_REFLECTION]);
+
+            if (first)
+            {
+                glClearColor(0, 0, 0, 1);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            }
+
+            unsigned int size = m->meshes.size();
+            for (u32 i = 0; i < size; ++i)
+            {
+                GLuint vao = m->FindVAO(i, programs[waterShaders[0]]);
+                glBindVertexArray(vao);
+
+                Material* mat = materials[m->materials[i]];
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, textures[mat->diffuseTex]->handle);
+
+                glUniform1i(waterUniform[0], 0);
+
+                glUniform1i(glGetUniformLocation(program, "uReflection"), true);
+
+                glUniform1f(glGetUniformLocation(program, "uHeight"), -4.0f);
+
+                Mesh* mesh = m->meshes[i];
+                glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
+
+                glBindVertexArray(0);
+            }
+
+            // REFRACTIONS =========================================================
+
+            glBindFramebuffer(GL_FRAMEBUFFER, waterBuffer.handle[WBT_REFRACTION]);
+
+            if (first)
+            {
+                glClearColor(0, 0, 0, 1);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                first = false;
+            }
+
+            size = m->meshes.size();
+            for (u32 i = 0; i < size; ++i)
+            {
+                GLuint vao = m->FindVAO(i, programs[waterShaders[0]]);
+                glBindVertexArray(vao);
+
+                Material* mat = materials[m->materials[i]];
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, textures[mat->diffuseTex]->handle);
+
+                glUniform1i(waterUniform[0], 0);
+
+                glUniform1i(glGetUniformLocation(program, "uReflection"), false);
+
+                glUniform1f(glGetUniformLocation(program, "uHeight"), -4.0f);
+
+                Mesh* mesh = m->meshes[i];
+                glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
+
+                glBindVertexArray(0);
+            }
         }
 
-        // REFLECTIONS =================================================
+        glUseProgram(0);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, waterBuffer.handle[WBT_REFLECTION]);
-
-        if (first)
-        {
-            glClearColor(0, 0, 0, 1);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        }
-
-        unsigned int size = m->meshes.size();
-        for (u32 i = 0; i < size; ++i)
-        {
-            GLuint vao = m->FindVAO(i, programs[waterShaders[0]]);
-            glBindVertexArray(vao);
-
-            Material* mat = materials[m->materials[i]];
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[mat->diffuseTex]->handle);
-
-            glUniform1i(waterUniform[0], 0);
-
-            glUniform1i(glGetUniformLocation(program, "uReflection"), true);
-
-            glUniform1f(glGetUniformLocation(program, "uHeight"), -4.0f);
-
-            Mesh* mesh = m->meshes[i];
-            glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
-
-            glBindVertexArray(0);
-        }
-
-        // REFRACTIONS =========================================================
-
-        glBindFramebuffer(GL_FRAMEBUFFER, waterBuffer.handle[WBT_REFRACTION]);
-
-        if (first)
-        {
-            glClearColor(0, 0, 0, 1);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            first = false;
-        }
-
-        size = m->meshes.size();
-        for (u32 i = 0; i < size; ++i)
-        {
-            GLuint vao = m->FindVAO(i, programs[waterShaders[0]]);
-            glBindVertexArray(vao);
-
-            Material* mat = materials[m->materials[i]];
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textures[mat->diffuseTex]->handle);
-
-            glUniform1i(waterUniform[0], 0);
-
-            glUniform1i(glGetUniformLocation(program, "uReflection"), false);
-
-            glUniform1f(glGetUniformLocation(program, "uHeight"), -4.0f);
-
-            Mesh* mesh = m->meshes[i];
-            glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
-
-            glBindVertexArray(0);
-        }
+        glDisable(GL_CLIP_DISTANCE0);
     }
 
-    glUseProgram(0);
+    {}
 
-    glDisable(GL_CLIP_DISTANCE0);
+    
+    // WATER PASS ===============================================
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, gBuffer.handle);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        GLuint program = programs[waterShaders[1]]->handle;
+        glUseProgram(program);
+
+        for (std::vector<Water*>::iterator it = waters.begin(); it != waters.end(); ++it)
+        {
+            Water* w = (*it);
+
+            // Uniforms
+            {
+                BindBuffer(waterConstBuffer);
+                MapBuffer(waterConstBuffer, GL_WRITE_ONLY);
+
+                u32 globalParamsOffset = waterConstBuffer.head;
+
+                PushMat4(waterConstBuffer, w->plane->world);
+                PushMat4(waterConstBuffer, GlobalMatrix(w->plane->world));
+                PushMat4(waterConstBuffer, glm::inverse(GlobalMatrix(w->plane->world)));
+                PushMat4(waterConstBuffer, cam->view);
+                PushMat4(waterConstBuffer, glm::inverse(cam->view));
+
+                AlignHead(waterConstBuffer, sizeof(glm::vec4));
+
+                u32 globalParamsSize = waterConstBuffer.head - globalParamsOffset;
+
+                UnmapBuffer(waterConstBuffer);
+                UnbindBuffer(waterConstBuffer);
+
+                BindBufferRange(waterConstBuffer, BINDING(2), 0, globalParamsSize); // Binding Global Params
+            }
+
+            unsigned int size = w->plane->meshes.size();
+            for (u32 i = 0; i < size; ++i)
+            {
+                GLuint vao = w->plane->FindVAO(i, programs[waterShaders[1]]);
+                glBindVertexArray(vao);
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, waterBuffer.albedoAttachHandle[WBT_REFLECTION]);
+
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, waterBuffer.albedoAttachHandle[WBT_REFRACTION]);
+
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, waterBuffer.depthAttachHandle[WBT_REFLECTION]);
+
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, waterBuffer.depthAttachHandle[WBT_REFRACTION]);
+
+                glActiveTexture(GL_TEXTURE4);
+                glBindTexture(GL_TEXTURE_2D, textures[waterBuffer.normalsTexIndex]->handle);
+
+                glActiveTexture(GL_TEXTURE5);
+                glBindTexture(GL_TEXTURE_2D, textures[waterBuffer.distortTexIndex]->handle);
+
+                glUniform1i(glGetUniformLocation(program, "uReflectionMap"  ), 0);
+
+                glUniform1i(glGetUniformLocation(program, "uRefractionMap"  ), 1);
+
+                glUniform1i(glGetUniformLocation(program, "uReflectionDepth"), 2);
+
+                glUniform1i(glGetUniformLocation(program, "uRefractionDepth"), 3);
+
+                glUniform1i(glGetUniformLocation(program, "uNormalMap"      ), 4);
+
+                glUniform1i(glGetUniformLocation(program, "uDudvMap"        ), 5);
+
+                Mesh* mesh = w->plane->meshes[i];
+                glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
+
+                glBindVertexArray(0);
+            }
 
 
+        }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glUseProgram(0);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 }
 
 void App::RenderBloom()
