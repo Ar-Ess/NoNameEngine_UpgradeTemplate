@@ -1117,7 +1117,6 @@ void App::RenderWater()
 
             PushMat4(waterConstBuffer, w->plane->world);
             PushMat4(waterConstBuffer, GlobalMatrix(w->plane->world));
-            PushVec3(waterConstBuffer, cam->Position());
 
             AlignHead(waterConstBuffer, sizeof(glm::vec4));
 
@@ -1150,8 +1149,6 @@ void App::RenderWater()
         glUniform1i(waterUniform[0], 0);
 
         glUniform1i(glGetUniformLocation(program, "uReflection"), true);
-
-        glUniform1i(glGetUniformLocation(program, "uFactor"), w->ReflectFactor());
 
         unsigned int size = w->plane->meshes.size();
         for (u32 i = 0; i < size; ++i)
@@ -1186,8 +1183,6 @@ void App::RenderWater()
         glUniform1i(waterUniform[0], 0);
 
         glUniform1i(glGetUniformLocation(program, "uReflection"), false);
-
-        glUniform1i(glGetUniformLocation(program, "uFactor"), w->RefractFactor());
 
         size = w->plane->meshes.size();
         for (u32 i = 0; i < size; ++i)
