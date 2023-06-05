@@ -17,14 +17,15 @@ layout(binding = 2, std140) uniform GlobalParams
 out vec2 vTexCoord;
 
 uniform bool uReflection;
+uniform float uHeight;
 
 void main()
 {
 	vTexCoord   = aTexCoord;
 	vec3 positionWorldSpace = vec3( uWorldMatrix * vec4(aPosition, 1.0) );
 
-	if (uReflection) gl_ClipDistance[0] = dot(vec4(positionWorldSpace, 1.0), vec4(0,  1, 0, 0));
-	else gl_ClipDistance[0] = dot(vec4(positionWorldSpace, 1.0), vec4(0,  -1, 0, 0));
+	if (uReflection) gl_ClipDistance[0] = dot(vec4(positionWorldSpace, 1.0), vec4(0,  1, 0, -uHeight));
+	else gl_ClipDistance[0] = dot(vec4(positionWorldSpace, 1.0), vec4(0,  -1, 0, uHeight));
 
 	gl_Position = uGlobalMatrix * vec4(aPosition, 1.0);
 }

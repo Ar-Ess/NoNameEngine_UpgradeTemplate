@@ -1108,8 +1108,6 @@ void App::RenderWater()
     GLuint program = programs[waterShaders[0]]->handle;
     glUseProgram(program);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, waterBuffer.handle[WBT_REFLECTION]);
-
     for (std::vector<Object*>::iterator it = objects.begin(); it != objects.end(); ++it)
     {
         Object* o = (*it);
@@ -1117,6 +1115,8 @@ void App::RenderWater()
         if (o->Type() != ObjectType::O_MODEL) continue;
 
         Model* m = (Model*)o;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // Uniforms
         {
@@ -1140,11 +1140,12 @@ void App::RenderWater()
 
         // REFLECTIONS =================================================
 
+        glBindFramebuffer(GL_FRAMEBUFFER, waterBuffer.handle[WBT_REFLECTION]);
+
         if (first)
         {
             glClearColor(0, 0, 0, 1);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            first = false;
         }
 
         unsigned int size = m->meshes.size();
@@ -1162,6 +1163,8 @@ void App::RenderWater()
 
             glUniform1i(glGetUniformLocation(program, "uReflection"), true);
 
+            glUniform1f(glGetUniformLocation(program, "uHeight"), -4.0f);
+
             Mesh* mesh = m->meshes[i];
             glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
 
@@ -1170,6 +1173,37 @@ void App::RenderWater()
 
         // REFRACTIONS =========================================================
 
+        glBindFramebuffer(GL_FRAMEBUFFER, waterBuffer.handle[WBT_REFRACTION]);
+
+        if (first)
+        {
+            glClearColor(0, 0, 0, 1);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            first = false;
+        }
+
+        size = m->meshes.size();
+        for (u32 i = 0; i < size; ++i)
+        {
+            GLuint vao = m->FindVAO(i, programs[waterShaders[0]]);
+            glBindVertexArray(vao);
+
+            Material* mat = materials[m->materials[i]];
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textures[mat->diffuseTex]->handle);
+
+            glUniform1i(waterUniform[0], 0);
+
+            glUniform1i(glGetUniformLocation(program, "uReflection"), false);
+
+            glUniform1f(glGetUniformLocation(program, "uHeight"), -4.0f);
+
+            Mesh* mesh = m->meshes[i];
+            glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
+
+            glBindVertexArray(0);
+        }
     }
 
     glUseProgram(0);
