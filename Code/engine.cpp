@@ -1169,7 +1169,7 @@ void App::RenderWater()
 
                 glUniform1i(glGetUniformLocation(program, "uReflection"), true);
 
-                glUniform1f(glGetUniformLocation(program, "uHeight"), -4.0f);
+                glUniform1f(glGetUniformLocation(program, "uHeight"), waters[0]->plane->position.y);
 
                 Mesh* mesh = m->meshes[i];
                 glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
@@ -1203,7 +1203,7 @@ void App::RenderWater()
 
                 glUniform1i(glGetUniformLocation(program, "uReflection"), false);
 
-                glUniform1f(glGetUniformLocation(program, "uHeight"), -4.0f);
+                glUniform1f(glGetUniformLocation(program, "uHeight"), waters[0]->plane->position.y);
 
                 Mesh* mesh = m->meshes[i];
                 glDrawElements(GL_TRIANGLES, mesh->indexs.size(), GL_UNSIGNED_INT, (void*)(u64)mesh->indexsOffset);
